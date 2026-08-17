@@ -1,0 +1,102 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Registry;
+
+use App\Exceptions\Failure;
+use App\Lock\Package;
+use App\Support\Cache;
+use App\Support\Http;
+
+final readonly class ArchiveFetcher
+{
+    public function __construct(
+        private Http $http,
+        private Cache $cache,
+    ) {}
+
+    public static function default(): self
+    {
+        return new self(Http::default(), Cache::default());
+    }
+
+    /**
+     * @return string the directory containing the extracted package tree
+     */
+    public function fetch(Package $package, bool $useCache = true): string
+    {
+        if ($package->distUrl === null || $package->distUrl === '') {
+            throw new Failure(sprintf(
+                'The package [%s@%s] has no dist URL, so its bytes cannot be fetched.',
+                $package->name,
+                $package->version,
+            ));
+        }
+
+        $key = mb_substr(hash('sha256', $package->distUrl.'|'.($package->distReference ?? '')), 0, 16);
+        $directory = $this->cache->path('archives', str_replace('/', '-', $package->name), $package->version.'-'.$key);
+
+        $marker = $directory.'.complete';
+
+        if ($useCache && is_file($marker) && is_dir($directory)) {
+            return $directory;
+        }
+
+        @unlink($marker);
+        $this->removeDirectory($directory);
+
+        $archive = $this->cache->path('downloads', str_replace('/', '-', $package->name).'-'.$package->version.'-'.$key.'.zip');
+
+        if (! $useCache || ! is_file($archive)) {
+            $this->http->download($package->distUrl, $archive);
+        }
+
+        $staging = $directory.'.'.bin2hex(random_bytes(6)).'.tmp';
+
+        try {
+            Zip::extract($archive, $staging);
+
+            if (! rename($staging, $directory)) {
+                throw new Failure(sprintf('Could not move the extracted archive into [%s].', $directory));
+            }
+
+            file_put_contents($marker, $package->version."\n");
+        } finally {
+            if (is_dir($staging)) {
+                $this->removeDirectory($staging);
+            }
+        }
+
+        return $directory;
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (! is_dir($directory)) {
+            return;
+        }
+
+        $names = @scandir($directory);
+
+        if ($names === false) {
+            return;
+        }
+
+        foreach ($names as $name) {
+            if ($name === '.' || $name === '..') {
+                continue;
+            }
+
+            $path = $directory.'/'.$name;
+
+            if (is_dir($path) && ! is_link($path)) {
+                $this->removeDirectory($path);
+            } else {
+                @unlink($path);
+            }
+        }
+
+        @rmdir($directory);
+    }
+}

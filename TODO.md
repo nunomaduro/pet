@@ -1,0 +1,7 @@
+- Review every single decision (options, API, etc)
+- Rewrite readme
+- Review test suite (smoke, snapshotting, etc)
+- Expand / Improve test suite, fixtures projects
+- Review every single line of code / refactoring
+- Rewrite readme again
+- Marketing: videos, artwork

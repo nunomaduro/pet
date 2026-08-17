@@ -1,0 +1,67 @@
+{
+    "name": "nunomaduro/pet",
+    "description": "A dependency audit ledger for PHP.",
+    "keywords": ["supply chain", "audit", "composer", "security", "console", "cli"],
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nuno Maduro",
+            "email": "enunomaduro@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "laravel-zero/foundation": "^13.25",
+        "laravel-zero/framework": "^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.30.5",
+        "mockery/mockery": "^1.6.13",
+        "pestphp/pest": "^4.7.8 || ^5.1.1",
+        "pestphp/pest-plugin-phpstan": "^5.0.2",
+        "pestphp/pest-plugin-rector": "^5.0.3",
+        "phpstan/phpstan": "^2.2.8",
+        "rector/rector": "^2.6.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "lint": [
+            "rector process",
+            "pint"
+        ],
+        "test:lint": [
+            "rector process --dry-run",
+            "pint --test"
+        ],
+        "test:dependencies": "./pet audit",
+        "test:types": "phpstan analyse",
+        "test:unit": "pest --parallel",
+        "test": [
+            "@test:lint",
+            "@test:dependencies",
+            "@test:types",
+            "@test:unit"
+        ]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "bin": ["pet"]
+}

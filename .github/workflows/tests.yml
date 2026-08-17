@@ -1,0 +1,33 @@
+name: Tests
+
+on: ['push', 'pull_request']
+
+jobs:
+    ci:
+        runs-on: ${{ matrix.os }}
+
+        strategy:
+            fail-fast: true
+            matrix:
+                os: [ubuntu-latest]
+                php: [8.3, 8.4, 8.5]
+                stability: [prefer-lowest, prefer-stable]
+
+        name: PHP ${{ matrix.php }} - ${{ matrix.stability }}
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  extensions: dom, curl, libxml, mbstring, zip
+                  coverage: pvoc
+
+            - name: Install dependencies
+              run: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress
+
+            - name: Run tests
+              run: composer test
