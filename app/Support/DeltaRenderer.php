@@ -50,7 +50,7 @@ final readonly class DeltaRenderer
         ];
     }
 
-    public function report(Delta $delta, ?string $only = null): void
+    public function report(Delta $delta, ?string $only = null, ?string $diffUrl = null): void
     {
         $this->output->newLine();
         $this->output->writeln(sprintf(
@@ -66,6 +66,10 @@ final readonly class DeltaRenderer
 
         if ($delta->toIsLocalInstall) {
             $this->components->twoColumnDetail('<fg=gray>compared against</>', '<fg=gray>your installed tree</>');
+        }
+
+        if ($diffUrl !== null) {
+            $this->components->twoColumnDetail('Changed files', $diffUrl);
         }
 
         foreach ($delta->notes as $note) {

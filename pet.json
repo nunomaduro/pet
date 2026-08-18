@@ -341,7 +341,7 @@
         },
         "pestphp/pest": {
             "version": "v5.1.1",
-            "hash": "tree-v1:a3003bdb5fd2c27beafe9245e063931c"
+            "hash": "tree-v1:f4876bbd0669d6289e9cb6085a182440"
         },
         "pestphp/pest-plugin": {
             "version": "v5.0.0",

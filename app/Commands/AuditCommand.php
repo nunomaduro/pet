@@ -37,7 +37,7 @@ final class AuditCommand extends Command
     public function handle(): int
     {
         try {
-            $project = Project::locate($this->stringOption('path') ?? (string)getcwd());
+            $project = Project::locate($this->stringOption('path') ?? (string) getcwd());
         } catch (PetException $petException) {
             $this->components->error($petException->getMessage());
 
@@ -75,39 +75,39 @@ final class AuditCommand extends Command
 
         $failing = $report->failing();
 
-        uasort($failing, static fn(PackageAudit $a, PackageAudit $b): int => [
-                self::statusWeight($a->status),
-                $b->files,
-                $a->package,
-            ] <=> [
-                self::statusWeight($b->status),
-                $a->files,
-                $b->package,
-            ]);
+        uasort($failing, static fn (PackageAudit $a, PackageAudit $b): int => [
+            self::statusWeight($a->status),
+            $b->files,
+            $a->package,
+        ] <=> [
+            self::statusWeight($b->status),
+            $a->files,
+            $b->package,
+        ]);
 
         if ($this->option(
-                'json'
-            ) === true) {
+            'json'
+        ) === true) {
             $this->output->write(Json::encode([
-                        'total' => $report->total(),
-                        'covered' => $report->coveredCount(),
-                        'percentage' => $report->percentage(),
-                        'counts' => $report->counts(),
-                        'lock_discrepancies' => $discrepancies,
-                        'unaudited' => array_values(array_map(function (PackageAudit $c) use ($project, $auditor): array {
-                                    $delta = $this->review($project, $auditor, $c);
+                'total' => $report->total(),
+                'covered' => $report->coveredCount(),
+                'percentage' => $report->percentage(),
+                'counts' => $report->counts(),
+                'lock_discrepancies' => $discrepancies,
+                'unaudited' => array_values(array_map(function (PackageAudit $c) use ($project, $auditor): array {
+                    $delta = $this->review($project, $auditor, $c);
 
-                                    return [
-                                        'package' => $c->package,
-                                        'version' => $c->version,
-                                        'status' => $c->status->value,
-                                        'dev' => $c->dev,
-                                        'files' => $c->files,
-                                        'files_to_review' => $delta instanceof Delta ? count($delta->changes()) : $c->files,
-                                        'scope' => $delta instanceof Delta ? sprintf('delta from %s', $delta->from) : 'whole package',
-                                    ];
-                                }, $failing)),
-                    ]));
+                    return [
+                        'package' => $c->package,
+                        'version' => $c->version,
+                        'status' => $c->status->value,
+                        'dev' => $c->dev,
+                        'files' => $c->files,
+                        'files_to_review' => $delta instanceof Delta ? count($delta->changes()) : $c->files,
+                        'scope' => $delta instanceof Delta ? sprintf('delta from %s', $delta->from) : 'whole package',
+                    ];
+                }, $failing)),
+            ]));
 
             return $this->verdict($failing !== [], $discrepancies !== []);
         }
@@ -179,11 +179,8 @@ final class AuditCommand extends Command
                         $audit->bytes
                     ),
                     $diffUrl === null ? '' : sprintf(
-                        "\n      Diff: %s",
-                        $this->link(
-                            $diffUrl,
-                            $diffUrl
-                        )
+                        "\n      Changed files: %s",
+                        $this->link($diffUrl)
                     ),
                 )
             );
@@ -205,7 +202,8 @@ final class AuditCommand extends Command
         $this->components->error(
             $this->output->isVerbose()
                 ? sprintf('%d package(s) are not covered. Record them with `pet trust`.', count($failing))
-                : sprintf('%d package(s) are not covered. Read the delta with `pet audit %s -v`, then record it with `pet trust`.', count($failing), array_key_first($failing),));
+                : sprintf('%d package(s) are not covered. Read the delta with `pet audit %s -v`, then record it with `pet trust`.', count($failing), array_key_first($failing)));
+
         return self::FAILURE;
     }
 
@@ -289,20 +287,13 @@ final class AuditCommand extends Command
         );
 
         if ($delta instanceof Delta) {
-            $renderer->report($delta, $this->stringOption('bucket'));
+            $diffLink = SourceDiffUrl::between($installed->sourceUrl, $delta->from, $delta->to);
+            $renderer->report($delta, $this->stringOption('bucket'), $diffLink !== null ? $this->link($diffLink) : null);
         } else {
             $this->newLine();
 
             if ($unresolved !== null) {
                 $this->components->warn($unresolved);
-            }
-        }
-
-        if ($delta instanceof Delta) {
-            $diffUrl = SourceDiffUrl::between($installed->sourceUrl, $delta->from, $delta->to);
-
-            if ($diffUrl !== null) {
-                $this->components->twoColumnDetail('diff', $this->link($diffUrl));
             }
         }
 
@@ -342,7 +333,7 @@ final class AuditCommand extends Command
 
     private function relative(string $root, string $path): string
     {
-        return str_starts_with($path, $root . '/') ? mb_substr($path, mb_strlen($root) + 1) : $path;
+        return str_starts_with($path, $root.'/') ? mb_substr($path, mb_strlen($root) + 1) : $path;
     }
 
     private function link(string $url, ?string $label = null): string
