@@ -218,6 +218,8 @@ A GitHub zipball answers 403 to a request that carries no `User-Agent` header, a
 
 The metadata of a package is at `https://repo.packagist.org/p2/<vendor>/<name>.json`. The array `packages.<name>` holds the newest version first, and each entry holds `version` and `dist.url`. `App\Registry\Packagist` reads this endpoint.
 
+`Symfony\Component\Console\Formatter\OutputFormatter` renders the `href` style as a terminal hyperlink, and `App\Support\SourceDiffUrl` builds compare URLs for HTTPS GitHub and GitLab source URLs without a network call.
+
 Read the full tree, and add no cache for speed. A hash of 6,953 files and 91.2 MB in `vendor/` takes 0.85 s.
 
 ---

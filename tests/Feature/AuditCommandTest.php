@@ -54,12 +54,14 @@ test('the verbose project audit renders source diffs for changed packages', func
             ...$manifest,
             'name' => 'acme/library',
             'version' => '1.0.0',
+        'source' => ['url' => 'https://github.com/acme/library.git', 'reference' => 'from'],
             'dist' => ['url' => $fromUrl, 'reference' => 'from'],
         ];
         $toMetadata = [
             ...$manifest,
             'name' => 'acme/library',
             'version' => '2.0.0',
+            'source' => ['url' => 'https://github.com/acme/library.git', 'reference' => 'to'],
             'dist' => ['url' => 'https://example.test/acme/library-2.0.0.zip', 'reference' => 'to'],
         ];
 
@@ -125,8 +127,24 @@ test('the verbose project audit renders source diffs for changed packages', func
         expect($process->getExitCode())->toBe(1)
             ->and($output)->toContain('runtime source (1)')
             ->and($output)->toContain("      -return 'old';")
-            ->and($output)->toContain("      +return 'new';");
-    } finally {
-        $remove($root);
+            ->and($output)->toContain("      +return 'new';")
+            ->and($output)->toContain('      Diff: https://github.com/acme/library/compare/1.0.0...2.0.0');
+
+        $packageProcess = new Process([
+                PHP_BINARY,
+                dirname(__DIR__, 2).'/pet',
+                '--path='.$root,
+                'audit',
+                'acme/library',
+                '--ansi',
+            ], null, ['PET_CACHE_DIR' => $cache]
+        );
+        $packageProcess->run();
+        $packageOutput = $packageProcess->getOutput().$packageProcess->getErrorOutput();
+        expect($packageProcess->getExitCode())->toBe(1)
+            ->and($packageOutput)->toContain("\033]8;;https://github.com/acme/library/compare/1.0.0...2.0.0\033\\https://github.com/acme/library/compare/1.0.0...2.0.0\033]8;;\033\\");
+        } finally {
+            $remove($root);
+        }
     }
-});
+);

@@ -18,6 +18,7 @@ use App\Lock\Project;
 use App\Support\Bytes;
 use App\Support\DeltaRenderer;
 use App\Support\Json;
+use App\Support\SourceDiffUrl;
 use LaravelZero\Framework\Commands\Command;
 
 final class AuditCommand extends Command
@@ -36,7 +37,7 @@ final class AuditCommand extends Command
     public function handle(): int
     {
         try {
-            $project = Project::locate($this->stringOption('path') ?? (string) getcwd());
+            $project = Project::locate($this->stringOption('path') ?? (string)getcwd());
         } catch (PetException $petException) {
             $this->components->error($petException->getMessage());
 
@@ -74,37 +75,39 @@ final class AuditCommand extends Command
 
         $failing = $report->failing();
 
-        uasort($failing, static fn (PackageAudit $a, PackageAudit $b): int => [
-            self::statusWeight($a->status),
-            $b->files,
-            $a->package,
-        ] <=> [
-            self::statusWeight($b->status),
-            $a->files,
-            $b->package,
-        ]);
+        uasort($failing, static fn(PackageAudit $a, PackageAudit $b): int => [
+                self::statusWeight($a->status),
+                $b->files,
+                $a->package,
+            ] <=> [
+                self::statusWeight($b->status),
+                $a->files,
+                $b->package,
+            ]);
 
-        if ($this->option('json') === true) {
+        if ($this->option(
+                'json'
+            ) === true) {
             $this->output->write(Json::encode([
-                'total' => $report->total(),
-                'covered' => $report->coveredCount(),
-                'percentage' => $report->percentage(),
-                'counts' => $report->counts(),
-                'lock_discrepancies' => $discrepancies,
-                'unaudited' => array_values(array_map(function (PackageAudit $c) use ($project, $auditor): array {
-                    $delta = $this->review($project, $auditor, $c);
+                        'total' => $report->total(),
+                        'covered' => $report->coveredCount(),
+                        'percentage' => $report->percentage(),
+                        'counts' => $report->counts(),
+                        'lock_discrepancies' => $discrepancies,
+                        'unaudited' => array_values(array_map(function (PackageAudit $c) use ($project, $auditor): array {
+                                    $delta = $this->review($project, $auditor, $c);
 
-                    return [
-                        'package' => $c->package,
-                        'version' => $c->version,
-                        'status' => $c->status->value,
-                        'dev' => $c->dev,
-                        'files' => $c->files,
-                        'files_to_review' => $delta instanceof Delta ? count($delta->changes()) : $c->files,
-                        'scope' => $delta instanceof Delta ? sprintf('delta from %s', $delta->from) : 'whole package',
-                    ];
-                }, $failing)),
-            ]));
+                                    return [
+                                        'package' => $c->package,
+                                        'version' => $c->version,
+                                        'status' => $c->status->value,
+                                        'dev' => $c->dev,
+                                        'files' => $c->files,
+                                        'files_to_review' => $delta instanceof Delta ? count($delta->changes()) : $c->files,
+                                        'scope' => $delta instanceof Delta ? sprintf('delta from %s', $delta->from) : 'whole package',
+                                    ];
+                                }, $failing)),
+                    ]));
 
             return $this->verdict($failing !== [], $discrepancies !== []);
         }
@@ -116,10 +119,12 @@ final class AuditCommand extends Command
         }
 
         if (! $auditor->ledger->exists()) {
-            $this->components->warn(sprintf(
-                'No ledger yet. `pet trust` records every installed package in %s.',
-                $this->relative($project->rootPath, $auditor->ledger->path),
-            ));
+            $this->components->warn(
+                sprintf(
+                    'No ledger yet. `pet trust` records every installed package in %s.',
+
+                    $this->relative($project->rootPath, $auditor->ledger->path),
+                ));
             $this->newLine();
         }
 
@@ -145,6 +150,15 @@ final class AuditCommand extends Command
             $delta = $this->review($project, $auditor, $audit);
             $files = $delta instanceof Delta ? count($delta->changes()) : $audit->files;
             $scope = $delta instanceof Delta ? sprintf('delta from %s', $delta->from) : 'whole package';
+            $diffUrl = $audit->grant instanceof Grant
+                ? SourceDiffUrl::between(
+                    $auditor->installed()->get(
+                        $audit->package
+                    )->sourceUrl,
+                    $audit->grant->version,
+                    $audit->version,
+                )
+                : null;
 
             $this->components->twoColumnDetail(
                 sprintf(
@@ -157,14 +171,27 @@ final class AuditCommand extends Command
                 sprintf('<fg=gray>%d files to review (%s)</>', $files, $scope),
             );
 
-            $this->line(sprintf(
-                '      <fg=gray>%s  ·  %s</>',
-                $audit->reason(),
-                Bytes::human($audit->bytes),
-            ));
+            $this->line(
+                sprintf(
+                    '      <fg=gray>%s  ·  %s%s</>',
+                    $audit->reason(),
+                    Bytes::human(
+                        $audit->bytes
+                    ),
+                    $diffUrl === null ? '' : sprintf(
+                        "\n      Diff: %s",
+                        $this->link(
+                            $diffUrl,
+                            $diffUrl
+                        )
+                    ),
+                )
+            );
 
             if ($renderer instanceof DeltaRenderer && $delta instanceof Delta) {
-                $renderer->report($delta);
+                $renderer->report(
+                    $delta
+                );
             }
         }
 
@@ -175,14 +202,10 @@ final class AuditCommand extends Command
         );
         $this->newLine();
 
-        $this->components->error($this->output->isVerbose()
-            ? sprintf('%d package(s) are not covered. Record them with `pet trust`.', count($failing))
-            : sprintf(
-                '%d package(s) are not covered. Read the delta with `pet audit %s -v`, then record it with `pet trust`.',
-                count($failing),
-                array_key_first($failing),
-            ));
-
+        $this->components->error(
+            $this->output->isVerbose()
+                ? sprintf('%d package(s) are not covered. Record them with `pet trust`.', count($failing))
+                : sprintf('%d package(s) are not covered. Read the delta with `pet audit %s -v`, then record it with `pet trust`.', count($failing), array_key_first($failing),));
         return self::FAILURE;
     }
 
@@ -275,6 +298,14 @@ final class AuditCommand extends Command
             }
         }
 
+        if ($delta instanceof Delta) {
+            $diffUrl = SourceDiffUrl::between($installed->sourceUrl, $delta->from, $delta->to);
+
+            if ($diffUrl !== null) {
+                $this->components->twoColumnDetail('diff', $this->link($diffUrl));
+            }
+        }
+
         if (! $covered) {
             $this->components->info(sprintf('Record these bytes with `pet trust %s`.', $package));
         }
@@ -285,7 +316,6 @@ final class AuditCommand extends Command
     private function review(Project $project, Auditor $auditor, PackageAudit $audit): ?Delta
     {
         $from = $auditor->ledger->grantFor($audit->package)?->version;
-
         if ($from === null) {
             return null;
         }
@@ -312,20 +342,29 @@ final class AuditCommand extends Command
 
     private function relative(string $root, string $path): string
     {
-        return str_starts_with($path, $root.'/') ? mb_substr($path, mb_strlen($root) + 1) : $path;
+        return str_starts_with($path, $root . '/') ? mb_substr($path, mb_strlen($root) + 1) : $path;
+    }
+
+    private function link(string $url, ?string $label = null): string
+    {
+        return sprintf('<href=%s>%s</>', $url, $label ?: $url);
     }
 
     private function stringArgument(string $name): ?string
     {
         $value = $this->argument($name);
 
-        return is_string($value) && $value !== '' ? $value : null;
+        return is_string(
+            $value
+        ) && $value !== '' ? $value : null;
     }
 
     private function stringOption(string $name): ?string
     {
         $value = $this->option($name);
 
-        return is_string($value) && $value !== '' ? $value : null;
+        return is_string(
+            $value
+        ) && $value !== '' ? $value : null;
     }
 }

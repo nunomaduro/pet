@@ -147,6 +147,8 @@ When the ledger already covers the installed version, the report stays local and
 pet audit carbonphp/carbon-doctrine-types --from=3.1.0
 ```
 
+When the trusted and installed versions differ, the report gives you a clickable `view diff` link when the package metadata names a GitHub or GitLab source repository.
+
 <a name="reviewing-the-source-of-a-change"></a>
 ### Reviewing the Source of a Change
 
