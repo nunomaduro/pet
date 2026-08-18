@@ -51,7 +51,7 @@
             "rector process --dry-run",
             "pint --test"
         ],
-        "test:dependencies": "./pet audit",
+        "test:dependencies": "pet audit",
         "test:types": "phpstan analyse",
         "test:unit": "pest --parallel",
         "test": [
