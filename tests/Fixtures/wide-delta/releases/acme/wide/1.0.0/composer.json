@@ -1,0 +1,11 @@
+{
+    "name": "acme/wide",
+    "description": "A tiny package.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Acme\\Wide\\": "src/"
+        }
+    }
+}

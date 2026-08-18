@@ -1,0 +1,30 @@
+{
+    "_readme": [
+        "A fixture: pet reads this file, Composer never wrote it."
+    ],
+    "content-hash": "fixture",
+    "packages": [
+        {
+            "name": "acme/framework",
+            "version": "1.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/framework/1.0.0.zip",
+                "reference": "acmeframework1.0.00000000000000000000000",
+                "shasum": ""
+            },
+            "source": {
+                "type": "git",
+                "url": "https://git.test/acme/framework.git",
+                "reference": "acmeframework1.0.00000000000000000000000"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\Framework\\": "src/"
+                }
+            }
+        }
+    ],
+    "packages-dev": []
+}

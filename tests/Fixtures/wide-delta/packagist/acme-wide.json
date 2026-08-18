@@ -1,0 +1,48 @@
+{
+    "packages": {
+        "acme/wide": [
+            {
+                "name": "acme/wide",
+                "version": "2.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/wide/2.0.0.zip",
+                    "reference": "acmewide2.0.0000000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/wide.git",
+                    "reference": "acmewide2.0.0000000000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Wide\\": "src/"
+                    }
+                }
+            },
+            {
+                "name": "acme/wide",
+                "version": "1.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/wide/1.0.0.zip",
+                    "reference": "acmewide1.0.0000000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/wide.git",
+                    "reference": "acmewide1.0.0000000000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Wide\\": "src/"
+                    }
+                }
+            }
+        ]
+    }
+}

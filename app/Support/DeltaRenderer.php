@@ -14,7 +14,9 @@ use Illuminate\Console\View\Components\Factory;
 
 final readonly class DeltaRenderer
 {
-    private const int MAX_PATHS = 20;
+    private const int MAX_PATHS = 5;
+
+    private const string CONTROL_CHARACTERS = '/[\x00-\x08\x0b-\x1f\x7f]/';
 
     private Factory $components;
 
@@ -80,6 +82,13 @@ final readonly class DeltaRenderer
             return;
         }
 
+        $this->buckets($delta, $only);
+
+        $this->renderVerdict($delta, $this->output->isVerbose());
+    }
+
+    public function buckets(Delta $delta, ?string $only = null): void
+    {
         $verbose = $this->output->isVerbose();
 
         foreach (Bucket::inReviewOrder() as $bucket) {
@@ -105,7 +114,7 @@ final readonly class DeltaRenderer
             foreach ($shown as $change) {
                 $this->renderChange($delta, $change);
 
-                if ($verbose && $bucket !== Bucket::Opaque) {
+                if ($bucket !== Bucket::Opaque) {
                     $this->renderPatch($change);
                 }
             }
@@ -113,13 +122,15 @@ final readonly class DeltaRenderer
             $hidden = count($changes) - count($shown);
 
             if ($hidden > 0) {
-                $this->output->writeln(sprintf('    <fg=gray>… and %d more</>', $hidden));
+                $this->output->writeln(sprintf(
+                    '    <fg=gray>… and %d more, with %s</>',
+                    $hidden,
+                    Invitation::verbose(),
+                ));
             }
 
             $this->output->newLine();
         }
-
-        $this->renderVerdict($delta, $verbose);
     }
 
     private function renderChange(Delta $delta, Change $change): void
@@ -136,25 +147,34 @@ final readonly class DeltaRenderer
             '    <fg=%s>%s</> %s%s',
             $color,
             $change->status->symbol(),
-            $change->path,
-            $annotation === null ? '' : sprintf('  <fg=gray>%s</>', $annotation),
+            $this->escape($change->path),
+            $annotation === null ? '' : sprintf('  <fg=gray>%s</>', $this->escape($annotation)),
         ));
 
         if ($change->bucket === Bucket::InstallManifest && $delta->manifestChange instanceof ManifestChange) {
             foreach ($delta->manifestChange->changedKeys() as $key) {
-                $this->output->writeln(sprintf('        <fg=gray>%s:</> %s', $key, $delta->manifestChange->render($key)));
+                $this->output->writeln(sprintf(
+                    '        <fg=gray>%s:</> %s',
+                    $this->escape($key),
+                    $this->escape($delta->manifestChange->render($key)),
+                ));
             }
         }
     }
 
     private function renderPatch(Change $change): void
     {
-        $diff = UnifiedDiff::between(
-            $change->oldFile === null ? null : $this->read($change->oldFile),
-            $change->newFile === null ? null : $this->read($change->newFile),
-            'a/'.$change->path,
-            'b/'.$change->path,
-        );
+        $old = $change->oldFile === null ? null : $this->read($change->oldFile);
+        $new = $change->newFile === null ? null : $this->read($change->newFile);
+
+        if ($this->holdsNoSource($old) || $this->holdsNoSource($new)) {
+            $this->output->writeln('      <fg=gray>this file holds no readable source, so its bytes are not shown</>');
+            $this->output->newLine();
+
+            return;
+        }
+
+        $diff = UnifiedDiff::between($old, $new, 'a/'.$change->path, 'b/'.$change->path);
 
         if ($diff === '') {
             return;
@@ -190,12 +210,30 @@ final readonly class DeltaRenderer
             return;
         }
 
-        if (! $verbose) {
+        $hidden = $this->hiddenCount($delta, $verbose);
+
+        if ($hidden > 0) {
             $this->components->info(sprintf(
-                'Read the source of these %d change(s) with -v.',
-                count($delta->changes()),
+                '%d change(s) are not shown. Read them with %s.',
+                $hidden,
+                Invitation::verbose(),
             ));
         }
+    }
+
+    private function hiddenCount(Delta $delta, bool $verbose): int
+    {
+        if ($verbose) {
+            return 0;
+        }
+
+        $hidden = 0;
+
+        foreach (Bucket::inReviewOrder() as $bucket) {
+            $hidden += max(0, count($delta->inBucket($bucket)) - self::MAX_PATHS);
+        }
+
+        return $hidden;
     }
 
     private function read(string $file): ?string
@@ -205,8 +243,17 @@ final readonly class DeltaRenderer
         return $contents === false ? null : $contents;
     }
 
+    private function holdsNoSource(?string $contents): bool
+    {
+        return $contents !== null && str_contains($contents, "\0");
+    }
+
     private function escape(string $line): string
     {
-        return str_replace(['<', '>'], ['\\<', '\\>'], $line);
+        return (string) preg_replace(
+            self::CONTROL_CHARACTERS,
+            '?',
+            str_replace(['<', '>'], ['\\<', '\\>'], $line),
+        );
     }
 }

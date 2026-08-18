@@ -3,4 +3,7 @@ parameters:
     paths:
         - app
         - tests
+    excludePaths:
+        - app/Composer/Plugin.php
+        - tests/Fixtures
     tmpDir: build/phpstan

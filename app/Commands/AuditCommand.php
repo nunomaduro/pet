@@ -17,6 +17,7 @@ use App\Lock\Package;
 use App\Lock\Project;
 use App\Support\Bytes;
 use App\Support\DeltaRenderer;
+use App\Support\Invitation;
 use App\Support\Json;
 use LaravelZero\Framework\Commands\Command;
 
@@ -79,16 +80,23 @@ final class AuditCommand extends Command
         }
 
         $failing = $report->failing();
+        $reviews = [];
+
+        foreach ($failing as $audit) {
+            $reviews[$audit->package] = $this->review($project, $auditor, $audit);
+        }
 
         uasort($failing, static fn (PackageAudit $a, PackageAudit $b): int => [
             self::statusWeight($a->status),
-            $b->files,
+            $reviews[$b->package]['files'],
             $a->package,
         ] <=> [
             self::statusWeight($b->status),
-            $a->files,
+            $reviews[$a->package]['files'],
             $b->package,
         ]);
+
+        $renderer = new DeltaRenderer($this->output);
 
         if ($this->option('json') === true) {
             $this->output->write(Json::encode([
@@ -97,8 +105,8 @@ final class AuditCommand extends Command
                 'percentage' => $report->percentage(),
                 'counts' => $report->counts(),
                 'lock_discrepancies' => $discrepancies,
-                'unaudited' => array_values(array_map(function (PackageAudit $c) use ($project, $auditor): array {
-                    $review = $this->review($project, $auditor, $c);
+                'unaudited' => array_values(array_map(static function (PackageAudit $c) use ($reviews, $renderer): array {
+                    $review = $reviews[$c->package];
 
                     return [
                         'package' => $c->package,
@@ -108,6 +116,7 @@ final class AuditCommand extends Command
                         'files' => $c->files,
                         'files_to_review' => $review['files'],
                         'scope' => $review['scope'],
+                        'delta' => $review['delta'] instanceof Delta ? $renderer->toArray($review['delta']) : null,
                     ];
                 }, $failing)),
             ]));
@@ -145,8 +154,11 @@ final class AuditCommand extends Command
         $this->line(sprintf('  <options=bold>to review</> <fg=gray>(%d, worst first)</>', count($failing)));
         $this->newLine();
 
+        $endsWithDelta = false;
+
         foreach ($failing as $audit) {
-            $review = $this->review($project, $auditor, $audit);
+            $review = $reviews[$audit->package];
+            $endsWithDelta = $review['delta'] instanceof Delta;
 
             $this->components->twoColumnDetail(
                 sprintf(
@@ -164,20 +176,30 @@ final class AuditCommand extends Command
                 $audit->reason(),
                 Bytes::human($audit->bytes),
             ));
+
+            if ($review['delta'] instanceof Delta) {
+                $this->newLine();
+                $renderer->buckets($review['delta']);
+            }
         }
 
-        $this->newLine();
+        if (! $endsWithDelta) {
+            $this->newLine();
+        }
+
         $this->components->twoColumnDetail(
             '<options=bold>audited</>',
             sprintf('%d / %d  <fg=gray>(%s%%)</>', $report->coveredCount(), $report->total(), $report->percentage()),
         );
         $this->newLine();
 
-        $this->components->error(sprintf(
-            '%d package(s) are not covered. Read the delta with `pet audit %s -v`, then record it with `pet trust`.',
-            count($failing),
-            array_key_first($failing),
-        ));
+        $this->components->error($this->output->isVerbose()
+            ? sprintf('%d package(s) are not covered. Record them with `pet trust`.', count($failing))
+            : sprintf(
+                '%d package(s) are not covered. Read every change with `%s`, then record them with `pet trust`.',
+                count($failing),
+                Invitation::verbose('pet audit -v'),
+            ));
 
         return self::FAILURE;
     }
@@ -197,7 +219,7 @@ final class AuditCommand extends Command
             $fingerprinter = Fingerprinter::forProject($project);
             $installed = $fingerprinter->repository()->get($package);
             $fingerprint = $fingerprinter->ofPackage($installed);
-            $grant = Ledger::forProject($project)->grantFor($package);
+            $grant = Ledger::forProject($project)->grantFor($installed->name);
         } catch (PetException $petException) {
             $this->components->error($petException->getMessage());
 
@@ -214,7 +236,7 @@ final class AuditCommand extends Command
         if ($from !== null) {
             try {
                 $delta = DeltaResolver::forProject($project)->resolve(
-                    package: $package,
+                    package: $installed->name,
                     from: $from,
                     to: $this->stringOption('to'),
                     useCache: $this->option('no-cache') !== true,
@@ -254,6 +276,11 @@ final class AuditCommand extends Command
             sprintf('<fg=default;options=bold>%s</>', $fingerprint->package),
             sprintf('<fg=gray>%s</>', $fingerprint->version),
         );
+
+        if ($installed->name !== $package) {
+            $this->components->twoColumnDetail('provides', $package);
+        }
+
         $this->components->twoColumnDetail('hash', (string) $fingerprint->hash);
         $this->components->twoColumnDetail('source', $fingerprint->source->value);
         $this->components->twoColumnDetail(
@@ -276,33 +303,42 @@ final class AuditCommand extends Command
         }
 
         if (! $covered) {
-            $this->components->info(sprintf('Record these bytes with `pet trust %s`.', $package));
+            $this->components->info(sprintf('Record these bytes with `pet trust %s`.', $installed->name));
         }
 
         return $covered ? self::SUCCESS : self::FAILURE;
     }
 
     /**
-     * @return array{files: int, scope: string}
+     * @return array{files: int, scope: string, delta: ?Delta}
      */
     private function review(Project $project, Auditor $auditor, PackageAudit $audit): array
     {
         $from = $auditor->ledger->grantFor($audit->package)?->version;
 
         if ($from === null) {
-            return ['files' => $audit->files, 'scope' => 'whole package'];
+            return $this->wholePackage($audit);
         }
 
         try {
             $delta = DeltaResolver::forProject($project)->resolve($audit->package, $from);
         } catch (PetException) {
-            return ['files' => $audit->files, 'scope' => 'whole package'];
+            return $this->wholePackage($audit);
         }
 
         return [
             'files' => count($delta->changes()),
             'scope' => sprintf('delta from %s', $delta->from),
+            'delta' => $delta,
         ];
+    }
+
+    /**
+     * @return array{files: int, scope: string, delta: null}
+     */
+    private function wholePackage(PackageAudit $audit): array
+    {
+        return ['files' => $audit->files, 'scope' => 'whole package', 'delta' => null];
     }
 
     private function deltaFrom(?Grant $grant, Package $installed): ?string

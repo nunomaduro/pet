@@ -1,0 +1,48 @@
+{
+    "packages": {
+        "acme/manifest-only": [
+            {
+                "name": "acme/manifest-only",
+                "version": "2.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/manifest-only/2.0.0.zip",
+                    "reference": "acmemanifest-only2.0.0000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/manifest-only.git",
+                    "reference": "acmemanifest-only2.0.0000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\ManifestOnly\\": "src/"
+                    }
+                }
+            },
+            {
+                "name": "acme/manifest-only",
+                "version": "1.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/manifest-only/1.0.0.zip",
+                    "reference": "acmemanifest-only1.0.0000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/manifest-only.git",
+                    "reference": "acmemanifest-only1.0.0000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\ManifestOnly\\": "src/"
+                    }
+                }
+            }
+        ]
+    }
+}

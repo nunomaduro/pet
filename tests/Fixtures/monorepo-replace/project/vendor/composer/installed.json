@@ -1,0 +1,33 @@
+{
+    "packages": [
+        {
+            "name": "acme/framework",
+            "version": "1.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/framework/1.0.0.zip",
+                "reference": "acmeframework1.0.00000000000000000000000",
+                "shasum": ""
+            },
+            "source": {
+                "type": "git",
+                "url": "https://git.test/acme/framework.git",
+                "reference": "acmeframework1.0.00000000000000000000000"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\Framework\\": "src/"
+                }
+            },
+            "installation-source": "dist",
+            "install-path": "../acme/framework",
+            "replace": {
+                "acme/widget": "self.version",
+                "acme/lint": "self.version"
+            }
+        }
+    ],
+    "dev": true,
+    "dev-package-names": []
+}

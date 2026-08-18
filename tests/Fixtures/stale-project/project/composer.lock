@@ -1,0 +1,28 @@
+{
+    "_readme": [
+        "This file is a fixture: pet reads it, Composer never wrote it."
+    ],
+    "content-hash": "fixture",
+    "packages": [
+        {
+            "name": "acme/widget",
+            "version": "2.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/widget/2.0.0.zip",
+                "reference": "bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222",
+                "shasum": ""
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\Widget\\": "src/"
+                }
+            },
+            "bin": [
+                "bin/widget.phar"
+            ]
+        }
+    ],
+    "packages-dev": []
+}

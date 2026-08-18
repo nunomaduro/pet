@@ -1,0 +1,16 @@
+Loading composer repositories with package information
+Updating dependencies
+Lock file operations: 1 install, 2 updates, 1 removal
+  - Removing psr/simple-cache (3.0.0)
+  - Upgrading carbonphp/carbon-doctrine-types (3.1.0 => 3.2.0)
+  - Locking psr/container (2.0.2)
+  - Downgrading psr/log (3.0.0 => 2.0.0)
+Installing dependencies from lock file (including require-dev)
+Package operations: 1 install, 2 updates, 1 removal
+  - Removing psr/simple-cache (3.0.0)
+  - Upgrading carbonphp/carbon-doctrine-types (3.1.0 => 3.2.0)
+  - Installing psr/container (2.0.2)
+  - Downgrading psr/log (3.0.0 => 2.0.0)
+1 package you are using is looking for funding.
+Use the `composer fund` command to find out more!
+No security vulnerability advisories found.

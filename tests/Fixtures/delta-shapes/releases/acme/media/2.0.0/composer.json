@@ -1,0 +1,11 @@
+{
+    "name": "acme/media",
+    "description": "A tiny package.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Acme\\Media\\": "src/"
+        }
+    }
+}

@@ -1,0 +1,3 @@
+<?php
+
+// The local test.

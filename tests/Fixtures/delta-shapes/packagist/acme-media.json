@@ -1,0 +1,48 @@
+{
+    "packages": {
+        "acme/media": [
+            {
+                "name": "acme/media",
+                "version": "2.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/media/2.0.0.zip",
+                    "reference": "acmemedia2.0.000000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/media.git",
+                    "reference": "acmemedia2.0.000000000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Media\\": "src/"
+                    }
+                }
+            },
+            {
+                "name": "acme/media",
+                "version": "1.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/media/1.0.0.zip",
+                    "reference": "acmemedia1.0.000000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/media.git",
+                    "reference": "acmemedia1.0.000000000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Media\\": "src/"
+                    }
+                }
+            }
+        ]
+    }
+}

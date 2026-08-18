@@ -1,0 +1,10 @@
+{
+    "name": "acme/app",
+    "description": "A project that pet audits.",
+    "require": {
+        "acme/widget": "^1.0"
+    },
+    "config": {
+        "vendor-dir": "packages"
+    }
+}

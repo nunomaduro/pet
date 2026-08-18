@@ -1,0 +1,9 @@
+{
+    "name": "acme/opaque",
+    "description": "A tiny package.",
+    "type": "library",
+    "license": "MIT",
+    "bin": [
+        "builds/tool"
+    ]
+}

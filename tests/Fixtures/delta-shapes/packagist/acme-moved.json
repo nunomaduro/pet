@@ -1,0 +1,48 @@
+{
+    "packages": {
+        "acme/moved": [
+            {
+                "name": "acme/moved",
+                "version": "2.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/moved/2.0.0.zip",
+                    "reference": "acmemoved2.0.000000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/moved.git",
+                    "reference": "acmemoved2.0.000000000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Moved\\": "src/"
+                    }
+                }
+            },
+            {
+                "name": "acme/moved",
+                "version": "1.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/moved/1.0.0.zip",
+                    "reference": "acmemoved1.0.000000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/moved.git",
+                    "reference": "acmemoved1.0.000000000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Moved\\": "src/"
+                    }
+                }
+            }
+        ]
+    }
+}

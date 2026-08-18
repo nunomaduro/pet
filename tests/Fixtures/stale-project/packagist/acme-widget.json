@@ -1,0 +1,44 @@
+{
+    "packages": {
+        "acme/widget": [
+            {
+                "name": "acme/widget",
+                "version": "2.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/widget/2.0.0.zip",
+                    "reference": "bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222",
+                    "shasum": ""
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Widget\\": "src/"
+                    }
+                },
+                "bin": [
+                    "bin/widget.phar"
+                ]
+            },
+            {
+                "name": "acme/widget",
+                "version": "1.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/widget/1.0.0.zip",
+                    "reference": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+                    "shasum": ""
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Widget\\": "src/"
+                    }
+                },
+                "bin": [
+                    "bin/widget.phar"
+                ]
+            }
+        ]
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "name": "acme/app",
+    "description": "A project that pet audits.",
+    "require": {
+        "acme/widget": "^2.0"
+    }
+}

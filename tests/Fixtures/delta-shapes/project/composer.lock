@@ -1,0 +1,112 @@
+{
+    "_readme": [
+        "A fixture: pet reads this file, Composer never wrote it."
+    ],
+    "content-hash": "fixture",
+    "packages": [
+        {
+            "name": "acme/manifest-only",
+            "version": "2.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/manifest-only/2.0.0.zip",
+                "reference": "acmemanifest-only2.0.0000000000000000000",
+                "shasum": ""
+            },
+            "source": {
+                "type": "git",
+                "url": "https://git.test/acme/manifest-only.git",
+                "reference": "acmemanifest-only2.0.0000000000000000000"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\ManifestOnly\\": "src/"
+                }
+            }
+        },
+        {
+            "name": "acme/inert-only",
+            "version": "2.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/inert-only/2.0.0.zip",
+                "reference": "acmeinert-only2.0.0000000000000000000000",
+                "shasum": ""
+            },
+            "source": {
+                "type": "git",
+                "url": "https://git.test/acme/inert-only.git",
+                "reference": "acmeinert-only2.0.0000000000000000000000"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\InertOnly\\": "src/"
+                }
+            }
+        },
+        {
+            "name": "acme/opaque",
+            "version": "2.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/opaque/2.0.0.zip",
+                "reference": "acmeopaque2.0.00000000000000000000000000",
+                "shasum": ""
+            },
+            "source": {
+                "type": "git",
+                "url": "https://git.test/acme/opaque.git",
+                "reference": "acmeopaque2.0.00000000000000000000000000"
+            },
+            "bin": [
+                "builds/tool"
+            ]
+        },
+        {
+            "name": "acme/media",
+            "version": "2.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/media/2.0.0.zip",
+                "reference": "acmemedia2.0.000000000000000000000000000",
+                "shasum": ""
+            },
+            "source": {
+                "type": "git",
+                "url": "https://git.test/acme/media.git",
+                "reference": "acmemedia2.0.000000000000000000000000000"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\Media\\": "src/"
+                }
+            }
+        },
+        {
+            "name": "acme/moved",
+            "version": "2.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/moved/2.0.0.zip",
+                "reference": "acmemoved2.0.000000000000000000000000000",
+                "shasum": ""
+            },
+            "source": {
+                "type": "git",
+                "url": "https://git.test/acme/moved.git",
+                "reference": "acmemoved2.0.000000000000000000000000000"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\Moved\\": "src/"
+                }
+            }
+        }
+    ],
+    "packages-dev": []
+}

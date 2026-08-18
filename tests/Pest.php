@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+use Tests\TestCase;
+
+pest()->extend(TestCase::class)->in('Feature');
+
+function stubBinary(string $script): string
+{
+    $path = sys_get_temp_dir().'/pet-tests/'.bin2hex(random_bytes(8));
+
+    if (! is_dir(dirname($path))) {
+        mkdir(dirname($path), 0o777, true);
+    }
+
+    file_put_contents($path, "#!/bin/sh\n".$script."\n");
+    chmod($path, 0o755);
+
+    register_shutdown_function(static function () use ($path): void {
+        @unlink($path);
+    });
+
+    return $path;
+}

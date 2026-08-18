@@ -1,0 +1,48 @@
+{
+    "packages": {
+        "acme/root": [
+            {
+                "name": "acme/root",
+                "version": "2.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/root/2.0.0.zip",
+                    "reference": "acmeroot2.0.0000000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/root.git",
+                    "reference": "acmeroot2.0.0000000000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Root\\": ""
+                    }
+                }
+            },
+            {
+                "name": "acme/root",
+                "version": "1.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/root/1.0.0.zip",
+                    "reference": "acmeroot1.0.0000000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/root.git",
+                    "reference": "acmeroot1.0.0000000000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\Root\\": ""
+                    }
+                }
+            }
+        ]
+    }
+}

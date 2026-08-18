@@ -2,11 +2,18 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
+         cacheDirectory="build/phpunit"
          colors="true"
 >
     <testsuites>
         <testsuite name="Arch">
             <file>./tests/Arch.php</file>
+        </testsuite>
+        <testsuite name="Unit">
+            <directory>./tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>./tests/Feature</directory>
         </testsuite>
     </testsuites>
     <source>

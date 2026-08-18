@@ -1,0 +1,48 @@
+{
+    "packages": {
+        "acme/inert-only": [
+            {
+                "name": "acme/inert-only",
+                "version": "2.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/inert-only/2.0.0.zip",
+                    "reference": "acmeinert-only2.0.0000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/inert-only.git",
+                    "reference": "acmeinert-only2.0.0000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\InertOnly\\": "src/"
+                    }
+                }
+            },
+            {
+                "name": "acme/inert-only",
+                "version": "1.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/inert-only/1.0.0.zip",
+                    "reference": "acmeinert-only1.0.0000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/inert-only.git",
+                    "reference": "acmeinert-only1.0.0000000000000000000000"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Acme\\InertOnly\\": "src/"
+                    }
+                }
+            }
+        ]
+    }
+}

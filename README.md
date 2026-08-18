@@ -15,6 +15,8 @@
     - [Auditing a Single Package](#auditing-a-single-package)
     - [Reviewing the Source of a Change](#reviewing-the-source-of-a-change)
     - [Recording a Review](#recording-a-review)
+- [Previewing an Update](#previewing-an-update)
+- [Running on Every Update](#running-on-every-update)
 - [Available Commands](#available-commands)
 - [The Ledger](#the-ledger)
 - [Continuous Integration](#continuous-integration)
@@ -56,6 +58,7 @@
            {
                return $this->doConvertToPHPValue($value);
            }
+
 
   audited .................................................. 124 / 125 (99.2%)
 
@@ -150,7 +153,7 @@ pet audit carbonphp/carbon-doctrine-types --from=3.1.0
 <a name="reviewing-the-source-of-a-change"></a>
 ### Reviewing the Source of a Change
 
-By default, a delta names the changed paths and the count of changes. You may read the source of every change by providing the `-v` option, on the full report or on a single package:
+By default, a delta names up to five changed paths of each bucket, counts the paths that remain, and shows no source. You may read every path and the source of every change by providing the `-v` option, on the full report or on a single package:
 
 ```shell
 pet audit carbonphp/carbon-doctrine-types -v
@@ -196,14 +199,126 @@ If you would like to keep a sentence next to the entries you record, you may pro
 pet trust carbonphp/carbon-doctrine-types --notes="Reviewed with the team."
 ```
 
+<a name="previewing-an-update"></a>
+## Previewing an Update
+
+You may read the review before you take the update. The `preview` command asks Composer what the next `composer update` would do, fetches both sides of every version that moves from Packagist, and shows you the delta. The `vendor/` directory of your project stays as it is:
+
+```shell
+pet preview
+```
+
+```
+  to review (3, worst first)
+
+  carbonphp/carbon-doctrine-types 3.1.0 → 3.2.0 ............ 2 files to review
+      you trust 3.1.0
+
+  runtime source (2)
+    ~ src/Carbon/Doctrine/DateTimeImmutableType.php
+    ~ src/Carbon/Doctrine/DateTimeType.php
+
+  psr/container 2.0.2 .......................... whole package to review (new)
+      composer would add this package to the tree
+  psr/simple-cache 3.0.0 ......................... nothing to review (removed)
+      composer would take this package out of the tree
+
+   INFO  3 package(s) change. Read the source of their changes with `pet preview -v`, then run `composer update`.
+```
+
+A package that arrives for the first time has nothing to compare against, so the whole package is the review. A package that leaves takes its files with it. Every version that moves arrives as a delta, and you may read the source of each change with the `-v` option:
+
+```shell
+pet preview -v
+```
+
+```
+  to review (3, worst first)
+
+  carbonphp/carbon-doctrine-types 3.1.0 → 3.2.0 ............ 2 files to review
+      you trust 3.1.0
+
+  runtime source (2)
+    ~ src/Carbon/Doctrine/DateTimeImmutableType.php
+      @@ -17,7 +17,7 @@
+           /**
+            * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+            */
+      -    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?DateTimeImmutable
+      +    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?CarbonImmutable
+           {
+               return $this->doConvertToPHPValue($value);
+           }
+```
+
+The command reads the plan from the `composer` binary on your PATH, and it asks you nothing. It exits with a zero status code whenever the preview is complete, so you may put it in front of the update itself:
+
+```shell
+pet preview && composer update && pet audit
+```
+
+<a name="running-on-every-update"></a>
+## Running on Every Update
+
+pet ships a Composer plugin, so the audit runs by itself. Composer asks you to trust the plugin when you install pet, and you may also allow it by hand:
+
+```json
+{
+    "config": {
+        "allow-plugins": {
+            "nunomaduro/pet": true
+        }
+    }
+}
+```
+
+From then on, every `composer update`, `composer require` and `composer remove` ends with the audit. The report arrives under the output of Composer, and the command exits with a non-zero status code while a package is unread:
+
+```
+❯ composer update carbonphp/carbon-doctrine-types
+
+  Lock file operations: 0 installs, 1 update, 0 removals
+    - Upgrading carbonphp/carbon-doctrine-types (3.1.0 => 3.2.0)
+
+  to review (1, worst first)
+
+  carbonphp/carbon-doctrine-types 3.2.0 . 2 files to review (delta from 3.1.0)
+      3.1.0 was trusted, 3.2.0 is installed  ·  8.0 KB
+
+  runtime source (2)
+    ~ src/Carbon/Doctrine/DateTimeImmutableType.php
+    ~ src/Carbon/Doctrine/DateTimeType.php
+
+  audited .................................................... 75 / 76 (98.7%)
+
+   ERROR  1 package(s) are not covered. Read the source of their changes with `composer update -v`, then record them with `pet trust`.
+```
+
+Composer runs the audit, so the report asks for `composer update -v`. That option reaches the audit, and the source of every change arrives under the output of Composer.
+
+The update itself is already on disk when the report arrives. Nothing is undone, and nothing is blocked: the exit code is what stops the next step of your script or your pipeline. Read the changes, then record them:
+
+```shell
+pet trust carbonphp/carbon-doctrine-types
+```
+
+A project that has no ledger yet is not failed. The plugin says so once, and leaves your update alone:
+
+```
+pet has no ledger in this project yet. Run `pet trust` to record what you trust today.
+```
+
 <a name="available-commands"></a>
 ## Available Commands
 
 | Command | Function |
 |---|---|
-| `pet audit` | show what is unaudited, worst first, with the count of files that each review costs, and exit non-zero when a package is ungranted, when its contents changed, or when `vendor/` disagrees with `composer.lock` |
-| `pet audit <package>` | show the content hash, the count of files, the size and the reviewable delta in buckets; `--from` names the version to compare from |
-| `pet audit <package> -v` | show the same report with the source of each change |
+| `pet audit` | show what is unaudited, worst first, with the reviewable delta of each package, the source of each change and the count of files that each review costs, and exit non-zero when a package is ungranted, when its contents changed, or when `vendor/` disagrees with `composer.lock` |
+| `pet audit -v` | show the same report with every changed path, and not the first 5 of a bucket |
+| `pet audit <package>` | show the content hash, the count of files, the size and the reviewable delta in buckets, with the source of each change; `--from` names the version to compare from |
+| `pet audit <package> -v` | show the same report with every changed path, and not the first 5 of a bucket |
+| `pet preview` | show what the next `composer update` changes, with the reviewable delta of each package and the source of each change, before `vendor/` is touched |
+| `pet preview -v` | show the same report with every changed path, and not the first 5 of a bucket |
 | `pet trust` | trust each installed package at the tree on disk, and make the ledger |
 | `pet trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `pet.json` |
 

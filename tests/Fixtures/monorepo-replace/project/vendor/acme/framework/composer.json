@@ -1,0 +1,15 @@
+{
+    "name": "acme/framework",
+    "description": "A tiny package.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Acme\\Framework\\": "src/"
+        }
+    },
+    "replace": {
+        "acme/widget": "self.version",
+        "acme/lint": "self.version"
+    }
+}

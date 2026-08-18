@@ -1,0 +1,30 @@
+{
+    "_readme": [
+        "A fixture: pet reads this file, Composer never wrote it."
+    ],
+    "content-hash": "fixture",
+    "packages": [
+        {
+            "name": "acme/endings",
+            "version": "2.0.0",
+            "type": "library",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.test/acme/endings/2.0.0.zip",
+                "reference": "acmeendings2.0.0000000000000000000000000",
+                "shasum": ""
+            },
+            "source": {
+                "type": "git",
+                "url": "https://git.test/acme/endings.git",
+                "reference": "acmeendings2.0.0000000000000000000000000"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\Endings\\": "src/"
+                }
+            }
+        }
+    ],
+    "packages-dev": []
+}

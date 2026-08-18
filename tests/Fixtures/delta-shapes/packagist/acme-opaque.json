@@ -1,0 +1,44 @@
+{
+    "packages": {
+        "acme/opaque": [
+            {
+                "name": "acme/opaque",
+                "version": "2.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/opaque/2.0.0.zip",
+                    "reference": "acmeopaque2.0.00000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/opaque.git",
+                    "reference": "acmeopaque2.0.00000000000000000000000000"
+                },
+                "bin": [
+                    "builds/tool"
+                ]
+            },
+            {
+                "name": "acme/opaque",
+                "version": "1.0.0",
+                "type": "library",
+                "dist": {
+                    "type": "zip",
+                    "url": "https://packages.test/acme/opaque/1.0.0.zip",
+                    "reference": "acmeopaque1.0.00000000000000000000000000",
+                    "shasum": ""
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://git.test/acme/opaque.git",
+                    "reference": "acmeopaque1.0.00000000000000000000000000"
+                },
+                "bin": [
+                    "builds/tool"
+                ]
+            }
+        ]
+    }
+}

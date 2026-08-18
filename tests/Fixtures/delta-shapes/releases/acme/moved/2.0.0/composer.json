@@ -1,0 +1,11 @@
+{
+    "name": "acme/moved",
+    "description": "A tiny package.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Acme\\Moved\\": "src/"
+        }
+    }
+}
