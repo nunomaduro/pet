@@ -159,7 +159,7 @@ it('orders each package by the count of files that its review costs', function (
     ));
 
     expect($status)->toBe(1)
-        ->and(array_map(static fn (string $row): string => explode(' ', mb_trim($row))[0], $rows))
+        ->and(array_map(static fn (string $row): string => explode(' ', trim($row))[0], $rows))
         ->toBe(['acme/inert-only', 'acme/moved', 'acme/media', 'acme/opaque', 'acme/manifest-only']);
 });
 

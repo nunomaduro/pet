@@ -11,7 +11,7 @@ final class Path
         $parts = [];
 
         foreach ($segments as $index => $segment) {
-            $segment = $index === 0 ? mb_rtrim($segment, '/\\') : mb_trim($segment, '/\\');
+            $segment = $index === 0 ? rtrim($segment, '/\\') : trim($segment, '/\\');
 
             if ($segment !== '') {
                 $parts[] = $segment;

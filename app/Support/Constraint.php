@@ -18,7 +18,7 @@ final readonly class Constraint
 
     public static function parse(string $expression): self
     {
-        $trimmed = mb_trim($expression);
+        $trimmed = trim($expression);
 
         if ($trimmed === '') {
             throw new Failure('An empty version constraint matches nothing; say "*" if you mean everything.');
@@ -29,7 +29,7 @@ final readonly class Constraint
         foreach (preg_split('/\s*\|\|?\s*/', $trimmed) ?: [] as $alternative) {
             $clauses = [];
 
-            foreach (preg_split('/(?:\s*,\s*|\s+)/', mb_trim($alternative)) ?: [] as $clause) {
+            foreach (preg_split('/(?:\s*,\s*|\s+)/', trim($alternative)) ?: [] as $clause) {
                 if ($clause !== '') {
                     $clauses[] = self::clause($clause);
                 }
@@ -49,7 +49,7 @@ final readonly class Constraint
 
     public static function normalize(string $version): string
     {
-        $version = mb_ltrim(mb_trim($version), 'vV');
+        $version = ltrim(trim($version), 'vV');
         $plus = mb_strpos($version, '+');
 
         return $plus === false ? $version : mb_substr($version, 0, $plus);
@@ -107,7 +107,7 @@ final readonly class Constraint
         }
 
         if (str_contains($clause, '*')) {
-            $prefix = mb_rtrim(mb_substr($clause, 0, (int) mb_strpos($clause, '*')), '.');
+            $prefix = rtrim(mb_substr($clause, 0, (int) mb_strpos($clause, '*')), '.');
 
             return static fn (string $version): bool => $prefix === '' || $version === $prefix || str_starts_with($version, $prefix.'.');
         }

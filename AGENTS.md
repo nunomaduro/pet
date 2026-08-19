@@ -81,6 +81,12 @@ Give a helper under `app/Support` the output of the command and let it build its
 
 Print each text that a package holds through `App\Support\ControlSafe`, and make each components factory an `App\Support\ControlSafeComponents`. `App\Support\ControlSafeFormatter` cleans the text that `line()` and `writeln()` write, and a component reaches the formatter with its control characters already gone: Termwind parses the HTML of a component with `DOMDocument`, and libxml 2.9 deletes a control character that libxml 2.15 keeps.
 
+Keep `platform.php` at `8.3.0` in `config` of `composer.json`. `builds/pet` holds the tree that Composer resolved, thus a tree that Composer resolves against PHP 8.4 puts Symfony 8 in the PHAR and that PHAR stops on PHP 8.3 in `vendor/composer/platform_check.php`. The pin also gives each job of CI one tree, thus the ledger of this project covers the tree of each version of PHP.
+
+Add no package to `require-dev` that requires PHP 8.4 or higher, because the pin of `platform.php` rejects it. `pestphp/pest` stays at `^4.7.8` for this reason.
+
+Call `trim`, `ltrim` and `rtrim`, and call no `mb_trim`, `mb_ltrim` or `mb_rtrim`: PHP 8.4 added those three functions and `pet` runs on PHP 8.3. `pint.json` keeps `mb_str_functions` false, because that fixer writes them.
+
 Do not add an entry to `require` in `composer.json`. The audit engine uses the core of PHP alone, and `laravel-zero/framework` serves `app/Commands` and `app/Providers`. A new dependency also makes a version conflict when a user installs `pet` in the tree of a Laravel application.
 
 Point `bin` of `composer.json` at `builds/pet`, and give the dist five files: `builds/pet`, `LICENSE.md`, `composer.json`, `app/Composer/Gate.php` and `app/Composer/Plugin.php`. `.gitattributes` sets `export-ignore` on each other path. Test the shape with `git archive --format=tar $(git write-tree) | tar -t`.
@@ -91,7 +97,7 @@ Give `app/Composer` no dependency on a different namespace under `App\`. Compose
 
 Build the PHAR again with `php pet app:build` after you change a file under `app/`, `bootstrap/` or `config/`, and commit `builds/pet`. The dist holds the PHAR and holds no source of the application, thus a release of an old PHAR ships the code of the previous version.
 
-Keep `exclude-dev-files` false in `box.json`. `laravel-zero/framework` is in `require-dev`, thus Box dumps an autoloader that holds no framework when that option is true, and the PHAR stops with `Class "LaravelZero\Framework\Application" not found`. Run `./builds/pet audit` after each build.
+Keep `exclude-dev-files` false in `box.json`. `laravel-zero/framework` is in `require-dev`, thus Box dumps an autoloader that holds no framework when that option is true, and the PHAR stops with `Class "LaravelZero\Framework\Application" not found`. Run `./builds/pet audit` after each build, with PHP 8.3, with PHP 8.4 and with PHP 8.5: the three runs print one report.
 
 Declare `abstract` on a class that a different class extends, because `pint.json` sets `final_class` and thus makes each other class final. `app/Exceptions/PetException.php` is abstract for this reason. To signal an error that has no dedicated class, throw `App\Exceptions\Failure`.
 
@@ -228,9 +234,13 @@ A GitHub zipball answers 403 to a request that carries no `User-Agent` header, a
 
 `symfony/var-dumper` changed `composer.json` alone between v7.4.14 and v7.4.15. This is the common delta.
 
-`pestphp/pest` ships an empty file at `.temp/.gitkeep`, and Pest gives that directory to PHPUnit as the cache directory. A tree that lost that file holds 295 files and hashes `tree-v1:5a95adac3eb84fe65434a4e5cfa9fad5`, and the tree of a fresh install holds 296 files and hashes `tree-v1:d91b628abb132045a6fcff2eabb9476c`, thus a grant of the first hash fails the gate of CI. When `pet audit` reports that the bytes of this package changed, run `ls vendor/pestphp/pest/.temp` first: when the directory is absent, make the file again with `mkdir -p vendor/pestphp/pest/.temp && : > vendor/pestphp/pest/.temp/.gitkeep`, and then run `./pet trust pestphp/pest`.
+`pestphp/pest` ships an empty file at `.temp/.gitkeep`, and Pest gives that directory to PHPUnit as the cache directory. A tree that lost that file fails the gate of CI, because the hash of the tree of a fresh install holds it. When `pet audit` reports that the bytes of this package changed, run `ls vendor/pestphp/pest/.temp` first: when the directory is absent, make the file again with `mkdir -p vendor/pestphp/pest/.temp && : > vendor/pestphp/pest/.temp/.gitkeep`, and then run `./pet trust pestphp/pest`.
 
 Ubuntu 24.04 holds libxml 2.9.14, and the machine of the developer holds libxml 2.15. The HTML parser of libxml 2.9 deletes a character between `\x00` and `\x1f`, and the parser of libxml 2.15 keeps it. Termwind gives the HTML of a component to `DOMDocument`, thus a component that receives a raw control character prints `1.0.0[2K` on the job of CI and `1.0.0?[2K` on the machine of the developer. Clean the text before the component reads it.
+
+Symfony 8 requires PHP `>=8.4.1`, and Pest 5 requires PHP `^8.4`, as do `pestphp/pest-plugin-phpstan` and `pestphp/pest-plugin-rector`. A resolution against PHP 8.4 holds those versions, thus the pin of `platform.php` in `composer.json` keeps Symfony 7.4 and Pest 4 in the tree and in the PHAR.
+
+PHPStan reads the `extra.phpstan.includes` of a package through `phpstan/extension-installer`, the tree holds no `phpstan/extension-installer` and `phpstan.neon.dist` holds no `includes` section: a package that ships a rule of PHPStan thus registers nothing. Write the path of `extension.neon` of that package in `includes` when you add one.
 
 The metadata of a package is at `https://repo.packagist.org/p2/<vendor>/<name>.json`. The array `packages.<name>` holds the newest version first, and each entry holds `version` and `dist.url`. `App\Registry\Packagist` reads this endpoint.
 

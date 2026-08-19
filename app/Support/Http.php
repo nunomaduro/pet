@@ -26,7 +26,7 @@ final readonly class Http
             ? $this->getWithCurl($url)
             : $this->getWithStreams($url);
 
-        if (mb_trim($body) === '') {
+        if (trim($body) === '') {
             throw FetchFailed::empty($url);
         }
 

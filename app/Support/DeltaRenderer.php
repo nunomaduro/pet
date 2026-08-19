@@ -177,7 +177,7 @@ final readonly class DeltaRenderer
             return;
         }
 
-        foreach (array_slice(explode("\n", mb_rtrim($diff, "\n")), 2) as $line) {
+        foreach (array_slice(explode("\n", rtrim($diff, "\n")), 2) as $line) {
             $this->output->writeln('      '.match (true) {
                 str_starts_with($line, '+') => sprintf('<fg=green>%s</>', $this->escape($line)),
                 str_starts_with($line, '-') => sprintf('<fg=red>%s</>', $this->escape($line)),

@@ -102,7 +102,7 @@ final class Packagist
     {
         $versions = $this->versions($package);
 
-        foreach ([$version, 'v'.$version, mb_ltrim($version, 'v')] as $candidate) {
+        foreach ([$version, 'v'.$version, ltrim($version, 'v')] as $candidate) {
             if (isset($versions[$candidate])) {
                 return $versions[$candidate];
             }
@@ -123,7 +123,7 @@ final class Packagist
 
         $index = false;
 
-        foreach ([$version, 'v'.$version, mb_ltrim($version, 'v')] as $candidate) {
+        foreach ([$version, 'v'.$version, ltrim($version, 'v')] as $candidate) {
             $found = array_search($candidate, $versions, true);
 
             if ($found !== false) {

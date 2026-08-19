@@ -19,7 +19,7 @@ final class FetchFailed extends PetException
             $url,
             $status,
             $hint,
-            $body === '' ? '' : ' Response: '.mb_substr(mb_trim($body), 0, 200),
+            $body === '' ? '' : ' Response: '.mb_substr(trim($body), 0, 200),
         ));
     }
 

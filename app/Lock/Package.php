@@ -109,11 +109,11 @@ final readonly class Package
         $roots = [];
 
         foreach ($this->autoloadPaths() as $path) {
-            $roots[] = mb_trim($path, '/.');
+            $roots[] = trim($path, '/.');
         }
 
         foreach ($this->bin as $path) {
-            $roots[] = mb_trim($path, '/');
+            $roots[] = trim($path, '/');
         }
 
         return array_values(array_unique(array_filter($roots, static fn (string $root): bool => $root !== '')));
@@ -122,7 +122,7 @@ final readonly class Package
     public function autoloadsPackageRoot(): bool
     {
         foreach ($this->autoloadPaths() as $path) {
-            if (mb_trim($path, '/.') === '') {
+            if (trim($path, '/.') === '') {
                 return true;
             }
         }

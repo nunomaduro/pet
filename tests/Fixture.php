@@ -180,7 +180,7 @@ final readonly class Fixture
     private function seedComposer(string $plan): void
     {
         if (is_file($plan)) {
-            $this->composer(mb_rtrim((string) file_get_contents($plan), "\n"));
+            $this->composer(rtrim((string) file_get_contents($plan), "\n"));
         }
     }
 }

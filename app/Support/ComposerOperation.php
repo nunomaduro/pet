@@ -35,7 +35,7 @@ final readonly class ComposerOperation
 
     private static function version(string $version): string
     {
-        $trimmed = mb_trim($version);
+        $trimmed = trim($version);
         $space = mb_strpos($trimmed, ' ');
 
         return $space === false ? $trimmed : mb_substr($trimmed, 0, $space);

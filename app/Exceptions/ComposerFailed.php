@@ -24,12 +24,12 @@ final class ComposerFailed extends PetException
 
     public static function planFailed(string $rootPath, ?int $exitCode, string $output): self
     {
-        $lines = preg_split('/\R/', mb_trim($output));
+        $lines = preg_split('/\R/', trim($output));
 
         return new self(sprintf(
             '`composer update --dry-run` failed in [%s] with exit code %s. Composer says:',
             $rootPath,
             $exitCode === null ? 'unknown' : (string) $exitCode,
-        ), $lines === false ? [] : array_values(array_filter($lines, static fn (string $line): bool => mb_trim($line) !== '')));
+        ), $lines === false ? [] : array_values(array_filter($lines, static fn (string $line): bool => trim($line) !== '')));
     }
 }

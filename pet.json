@@ -209,33 +209,13 @@
             "version": "4.9.3",
             "hash": "tree-v1:5683dc29fce0bf6588b8074e4f5d5c19"
         },
-        "symfony/clock": {
-            "version": "v8.1.0",
-            "hash": "tree-v1:7888f31d60c29c4f777204510e9a60a5"
-        },
-        "symfony/console": {
-            "version": "v8.1.4",
-            "hash": "tree-v1:6278de8094075df5a00680affe1bc1a0"
-        },
         "symfony/deprecation-contracts": {
             "version": "v3.7.1",
             "hash": "tree-v1:5833e98c5092cd02ed429ffd459b82b1"
         },
-        "symfony/error-handler": {
-            "version": "v8.1.2",
-            "hash": "tree-v1:9ead09c89f56303b8cdd247aa2561f86"
-        },
-        "symfony/event-dispatcher": {
-            "version": "v8.1.2",
-            "hash": "tree-v1:f98bf51d31b6f97cd343212e6f7b8df2"
-        },
         "symfony/event-dispatcher-contracts": {
             "version": "v3.7.1",
             "hash": "tree-v1:0ac7e6b0bd6da93975ac9b3ec9f41aa5"
-        },
-        "symfony/finder": {
-            "version": "v8.1.1",
-            "hash": "tree-v1:0dc6c8b9312a999436f4f736ce9c33d7"
         },
         "symfony/polyfill-ctype": {
             "version": "v1.37.0",
@@ -269,29 +249,13 @@
             "version": "v1.41.0",
             "hash": "tree-v1:7b744a489362acde9fac59148b3ec385"
         },
-        "symfony/process": {
-            "version": "v8.1.0",
-            "hash": "tree-v1:0ef49d7bf0109e9d07406727aa8227e5"
-        },
         "symfony/service-contracts": {
             "version": "v3.7.1",
             "hash": "tree-v1:7b156b7e7dd1cf17dd7bde352e355d46"
         },
-        "symfony/string": {
-            "version": "v8.1.2",
-            "hash": "tree-v1:6c3dbd245e870cd78bdd16b764534dff"
-        },
-        "symfony/translation": {
-            "version": "v8.1.4",
-            "hash": "tree-v1:0cd6421dce1427357556e4e4bd0f77d7"
-        },
         "symfony/translation-contracts": {
             "version": "v3.7.1",
             "hash": "tree-v1:74a8e3a8f0580af687b411de0e087911"
-        },
-        "symfony/var-dumper": {
-            "version": "v8.1.2",
-            "hash": "tree-v1:3329f5b339ccbf4ec6762afa4dad3049"
         },
         "vlucas/phpdotenv": {
             "version": "v5.6.4",
@@ -304,8 +268,16 @@
     },
     "require-dev": {
         "brianium/paratest": {
-            "version": "v7.24.0",
-            "hash": "tree-v1:3629153db155b72b307e76e1d79c0b30"
+            "version": "v7.20.0",
+            "hash": "tree-v1:075f8b7e73532ba3689126db0f91288a"
+        },
+        "composer/pcre": {
+            "version": "3.4.0",
+            "hash": "tree-v1:ed02f4e2009261111a40bc3f96d602af"
+        },
+        "composer/xdebug-handler": {
+            "version": "3.0.5",
+            "hash": "tree-v1:780bdd65290fbfc62bbe8de682feb4ef"
         },
         "doctrine/deprecations": {
             "version": "1.1.6",
@@ -340,28 +312,28 @@
             "hash": "tree-v1:90ddc66bf11d350b722c1773acd27c8d"
         },
         "pestphp/pest": {
-            "version": "v5.1.1",
-            "hash": "tree-v1:d91b628abb132045a6fcff2eabb9476c"
+            "version": "v4.7.8",
+            "hash": "tree-v1:b190eb53ae5b89d8b2a70b5d2a9f0c1c"
         },
         "pestphp/pest-plugin": {
-            "version": "v5.0.0",
-            "hash": "tree-v1:805cbcd5555dbbff2069126228c42319"
+            "version": "v4.0.0",
+            "hash": "tree-v1:48fa761b1f8101ab32017508a4985581"
         },
         "pestphp/pest-plugin-arch": {
-            "version": "v5.0.0",
-            "hash": "tree-v1:de5256443ea946158e52ce0eacbb2110"
+            "version": "v4.0.2",
+            "hash": "tree-v1:37a528a6ea7283adfb14f06e80ce4dd3"
         },
         "pestphp/pest-plugin-mutate": {
-            "version": "v5.0.2",
-            "hash": "tree-v1:539c2118cd2c7e19e545c3000f1d68b5"
+            "version": "v4.0.1",
+            "hash": "tree-v1:90dc0a102fcecaf0314015c17c0e98e3"
         },
         "pestphp/pest-plugin-phpstan": {
             "version": "v5.0.2",
             "hash": "tree-v1:de438765baa79ae24f08907f252b8bde"
         },
         "pestphp/pest-plugin-profanity": {
-            "version": "v5.0.0",
-            "hash": "tree-v1:6f8f8f005fce1fd3b335063134591dbc"
+            "version": "v4.2.1",
+            "hash": "tree-v1:88b1581205235488496300f5ee233b42"
         },
         "pestphp/pest-plugin-rector": {
             "version": "v5.0.2",
@@ -396,56 +368,56 @@
             "hash": "tree-v1:11220d859d5bd2348fd5077163b60446"
         },
         "phpunit/php-code-coverage": {
-            "version": "14.3.1",
-            "hash": "tree-v1:b3ae2148d26a2f6534dfb76438d6af27"
+            "version": "12.5.7",
+            "hash": "tree-v1:5cf24f83c21b6d8fce23e7ad853f77f0"
         },
         "phpunit/php-file-iterator": {
-            "version": "7.0.1",
-            "hash": "tree-v1:d3c5b2b2d2ddf9c8aa36259f92943225"
+            "version": "6.0.1",
+            "hash": "tree-v1:54536e94dfbd738ec39954f8f2bc3774"
         },
         "phpunit/php-invoker": {
-            "version": "7.0.0",
-            "hash": "tree-v1:46125b19f1b91a45ee388b8a601c270c"
+            "version": "6.0.0",
+            "hash": "tree-v1:6d8f648edbdac676ca9bee9c2fe97c82"
         },
         "phpunit/php-text-template": {
-            "version": "6.0.0",
-            "hash": "tree-v1:83156cc76b1bc62fefed45a829f6c08d"
+            "version": "5.0.0",
+            "hash": "tree-v1:4470e41670dd466f1af97fb08a0705d5"
         },
         "phpunit/php-timer": {
-            "version": "9.0.0",
-            "hash": "tree-v1:8eefb702abb01e63c627bc14e0d4c0c8"
+            "version": "8.0.0",
+            "hash": "tree-v1:f35fccbffc23c168f18029a433791f4d"
         },
         "phpunit/phpunit": {
-            "version": "13.3.0",
-            "hash": "tree-v1:e1215a6f41346beb602b2af331735bbb"
+            "version": "12.5.33",
+            "hash": "tree-v1:fe7d4ec3e4840290cee07c39535422b6"
         },
         "rector/rector": {
             "version": "2.6.2",
             "hash": "tree-v1:17dfc390ae7c7d468b9d5fc3d38f1f2c"
         },
         "sebastian/cli-parser": {
-            "version": "5.0.1",
-            "hash": "tree-v1:eb00130dfc031a44c3f8576dc5799054"
+            "version": "4.2.1",
+            "hash": "tree-v1:fc44fc3e0a4b1fd529963948acebc3a3"
         },
         "sebastian/comparator": {
-            "version": "8.4.0",
-            "hash": "tree-v1:8f3297b615559df951b0d76144ace2e0"
+            "version": "7.1.8",
+            "hash": "tree-v1:10f9243c8a5287b8ad9e7ed465171739"
         },
         "sebastian/complexity": {
-            "version": "6.0.0",
-            "hash": "tree-v1:8fe8a1a61410cf1c50d6435fc09975f7"
+            "version": "5.0.0",
+            "hash": "tree-v1:f0d6eb200ba389679d875eb854ffc9d6"
         },
         "sebastian/diff": {
-            "version": "9.0.0",
-            "hash": "tree-v1:5ddb8768371d2ba59e385c71aa03fc78"
+            "version": "7.0.0",
+            "hash": "tree-v1:c72b3660535ae84aa1fa0cf9f328ee07"
         },
         "sebastian/environment": {
-            "version": "9.3.2",
-            "hash": "tree-v1:7233138f0359a2826ff04ada98558cf2"
+            "version": "8.1.2",
+            "hash": "tree-v1:f6e34bc8513b7d4b3c319a99bd457c40"
         },
         "sebastian/exporter": {
-            "version": "8.2.1",
-            "hash": "tree-v1:3deca25c36f9da76391352902567c6cb"
+            "version": "7.0.3",
+            "hash": "tree-v1:14c6a001c221469a25b6bb02ab8b7684"
         },
         "sebastian/file-filter": {
             "version": "1.0.0",
@@ -456,36 +428,76 @@
             "hash": "tree-v1:5ed0522e452cbd47a87e87a63edb47ad"
         },
         "sebastian/global-state": {
-            "version": "9.0.1",
-            "hash": "tree-v1:eada5b9608e42ddb8b1b3cf369901bd8"
+            "version": "8.0.3",
+            "hash": "tree-v1:61b9dda526628a2c6b44092338d4363c"
         },
         "sebastian/lines-of-code": {
-            "version": "5.0.2",
-            "hash": "tree-v1:9de14feb07fe8c02a0902dbc60a5bf80"
+            "version": "4.0.1",
+            "hash": "tree-v1:10204087c002cc8387fd29d84327bec5"
         },
         "sebastian/object-enumerator": {
-            "version": "8.1.0",
-            "hash": "tree-v1:da3cb3233057128f53d4518b313f3dcb"
+            "version": "7.0.0",
+            "hash": "tree-v1:7e0147f70c38947d32d81b0a88607da1"
         },
         "sebastian/object-reflector": {
-            "version": "6.1.0",
-            "hash": "tree-v1:2fae58b10419a8427b2866e01dedef93"
+            "version": "5.0.0",
+            "hash": "tree-v1:dc02c4b2cc26efffc26b74e5bc0e489a"
         },
         "sebastian/recursion-context": {
-            "version": "8.0.1",
-            "hash": "tree-v1:4a7508f3dab73c5c0770f4b09f094898"
+            "version": "7.0.1",
+            "hash": "tree-v1:c2713c083e6e14599b6a68f986d96969"
         },
         "sebastian/type": {
-            "version": "7.0.2",
-            "hash": "tree-v1:34f982765bfdd8cdc046bf1abc8a3e92"
+            "version": "6.0.4",
+            "hash": "tree-v1:c18e590b1fad7140ccc8dc1608663535"
         },
         "sebastian/version": {
-            "version": "7.0.0",
-            "hash": "tree-v1:c58b55ceaafd037816869ac57994dc00"
+            "version": "6.0.0",
+            "hash": "tree-v1:b900b2263d6a49e35e6c9adf9d477f92"
         },
         "staabm/side-effects-detector": {
             "version": "1.0.5",
             "hash": "tree-v1:26d964435c381c94abd5dbadf497d788"
+        },
+        "symfony/clock": {
+            "version": "v7.4.8",
+            "hash": "tree-v1:736b4cd1305019df34cb4e1b1b5a2504"
+        },
+        "symfony/console": {
+            "version": "v7.4.16",
+            "hash": "tree-v1:6bcaeda34b1df22209a4ea023cf74641"
+        },
+        "symfony/error-handler": {
+            "version": "v7.4.15",
+            "hash": "tree-v1:8496cdd8c3c237648e8c48f092f7f0a9"
+        },
+        "symfony/event-dispatcher": {
+            "version": "v7.4.15",
+            "hash": "tree-v1:1e9dd55a344ed2b93ed078424ed83513"
+        },
+        "symfony/finder": {
+            "version": "v7.4.14",
+            "hash": "tree-v1:eacf156b53cc64a5af416a2d40ed666c"
+        },
+        "symfony/polyfill-php83": {
+            "version": "v1.41.0",
+            "hash": "tree-v1:fada0d369c196d6f1f04166f5d4efc01"
+        },
+        "symfony/process": {
+            "version": "v7.4.13",
+            "hash": "tree-v1:7fa664d757a0fdf27dc8dfd65c746dab"
+        },
+        "symfony/string": {
+            "version": "v7.4.15",
+            "hash": "tree-v1:2065f548b33ddefc8e6004e43bb59317"
+        },
+        "symfony/translation": {
+            "version": "v7.4.16",
+            "hash": "tree-v1:b9aa37d948d3aab281f4c75bf12de262"
+        },
+        "symfony/var-dumper": {
+            "version": "v7.4.15",
+            "hash": "tree-v1:c8b18ce6dcad1d629dccc76b6c4820ed"
         },
         "symplify/rule-doc-generator-contracts": {
             "version": "11.2.0",

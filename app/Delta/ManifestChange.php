@@ -132,6 +132,6 @@ final readonly class ManifestChange
             return (string) (is_bool($value) ? ($value ? 'true' : 'false') : $value);
         }
 
-        return mb_trim(str_replace("\n", ' ', Json::encode(is_array($value) ? $value : [$value])));
+        return trim(str_replace("\n", ' ', Json::encode(is_array($value) ? $value : [$value])));
     }
 }

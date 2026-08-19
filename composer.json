@@ -19,9 +19,7 @@
         "laravel-zero/framework": "^13.0",
         "laravel/pint": "^1.30.5",
         "mockery/mockery": "^1.6.14",
-        "pestphp/pest": "^4.7.8 || ^5.1.1",
-        "pestphp/pest-plugin-phpstan": "^5.0.2",
-        "pestphp/pest-plugin-rector": "5.0.2",
+        "pestphp/pest": "^4.7.8",
         "phpstan/phpstan": "^2.2.8",
         "rector/rector": "2.6.2"
     },
@@ -39,6 +37,9 @@
         }
     },
     "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
         "preferred-install": "dist",
         "sort-packages": true,
         "optimize-autoloader": true,
