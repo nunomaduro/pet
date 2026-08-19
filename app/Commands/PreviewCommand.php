@@ -18,7 +18,6 @@ use App\Support\DeltaRenderer;
 use App\Support\Invitation;
 use App\Support\Json;
 use App\Support\PlannedReview;
-use LaravelZero\Framework\Commands\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 final class PreviewCommand extends Command

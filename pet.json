@@ -420,8 +420,8 @@
             "hash": "tree-v1:e1215a6f41346beb602b2af331735bbb"
         },
         "rector/rector": {
-            "version": "2.6.3",
-            "hash": "tree-v1:361d2e5454eac4edba2ebe2d206e17a4"
+            "version": "2.6.2",
+            "hash": "tree-v1:17dfc390ae7c7d468b9d5fc3d38f1f2c"
         },
         "sebastian/cli-parser": {
             "version": "5.0.1",

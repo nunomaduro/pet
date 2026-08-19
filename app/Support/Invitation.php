@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Composer\Gate;
+
 final readonly class Invitation
 {
-    public const string ENVIRONMENT = 'PET_INSIDE_COMPOSER';
-
     public static function verbose(string $command = '-v'): string
     {
         return self::insideComposer() ? 'composer update -v' : $command;
@@ -15,6 +15,6 @@ final readonly class Invitation
 
     private static function insideComposer(): bool
     {
-        return getenv(self::ENVIRONMENT) === '1';
+        return getenv(Gate::ENVIRONMENT) === '1';
     }
 }

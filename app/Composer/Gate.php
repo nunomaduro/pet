@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Composer;
 
-use App\Support\Invitation;
-
 final readonly class Gate
 {
+    public const string ENVIRONMENT = 'PET_INSIDE_COMPOSER';
+
     public function __construct(
         public string $rootPath,
         private string $binDir,
@@ -58,7 +58,7 @@ final readonly class Gate
      */
     public function environment(): array
     {
-        return [Invitation::ENVIRONMENT => '1'];
+        return [self::ENVIRONMENT => '1'];
     }
 
     public function baselineNotice(): ?string

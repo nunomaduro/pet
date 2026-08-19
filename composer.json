@@ -12,18 +12,18 @@
     ],
     "require": {
         "php": "^8.3",
-        "composer-plugin-api": "^2.0",
-        "laravel-zero/foundation": "^13.25",
-        "laravel-zero/framework": "^13.0"
+        "composer-plugin-api": "^2.0"
     },
     "require-dev": {
+        "laravel-zero/foundation": "^13.25",
+        "laravel-zero/framework": "^13.0",
         "laravel/pint": "^1.30.5",
         "mockery/mockery": "^1.6.14",
         "pestphp/pest": "^4.7.8 || ^5.1.1",
         "pestphp/pest-plugin-phpstan": "^5.0.2",
         "pestphp/pest-plugin-rector": "5.0.2",
         "phpstan/phpstan": "^2.2.8",
-        "rector/rector": "^2.6.3"
+        "rector/rector": "2.6.2"
     },
     "extra": {
         "class": "App\\Composer\\Plugin"
@@ -69,5 +69,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "bin": ["pet"]
+    "bin": ["builds/pet"]
 }

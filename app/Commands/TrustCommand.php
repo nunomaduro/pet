@@ -14,7 +14,6 @@ use App\Ledger\Grant;
 use App\Ledger\PackageAudit;
 use App\Lock\Project;
 use App\Support\DeltaRenderer;
-use LaravelZero\Framework\Commands\Command;
 
 final class TrustCommand extends Command
 {

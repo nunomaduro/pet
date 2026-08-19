@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Composer\Gate;
-use App\Support\Invitation;
 
 function gateProject(bool $ledger, bool $binary): Gate
 {
@@ -50,7 +49,7 @@ it('passes the verbosity of composer to the audit', function (): void {
 
 it('tells the audit that composer runs it', function (): void {
     expect(gateProject(ledger: true, binary: true)->environment())
-        ->toBe([Invitation::ENVIRONMENT => '1']);
+        ->toBe([Gate::ENVIRONMENT => '1']);
 });
 
 it('asks for a baseline rather than fail a project that holds no ledger', function (): void {

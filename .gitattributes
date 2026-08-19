@@ -1,5 +1,32 @@
 * text=auto eol=lf
 tests/Fixtures/** -text
+builds/pet -text
+
+/.editorconfig export-ignore
+/.gitattributes export-ignore
 /.github export-ignore
-CONTRIBUTING.md export-ignore
-CHANGELOG.md export-ignore
+/.gitignore export-ignore
+/AGENTS.md export-ignore
+/app/Commands export-ignore
+/app/Delta export-ignore
+/app/Exceptions export-ignore
+/app/Identity export-ignore
+/app/Ledger export-ignore
+/app/Lock export-ignore
+/app/Providers export-ignore
+/app/Registry export-ignore
+/app/Support export-ignore
+/bootstrap export-ignore
+/box.json export-ignore
+/CLAUDE.md export-ignore
+/composer.lock export-ignore
+/config export-ignore
+/pet export-ignore
+/pet.json export-ignore
+/phpstan.neon.dist export-ignore
+/phpunit.xml.dist export-ignore
+/pint.json export-ignore
+/README.md export-ignore
+/rector.php export-ignore
+/tests export-ignore
+/TODO.md export-ignore

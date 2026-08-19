@@ -81,6 +81,14 @@ Give a helper under `app/Support` the output of the command and let it build its
 
 Do not add an entry to `require` in `composer.json`. The audit engine uses the core of PHP alone, and `laravel-zero/framework` serves `app/Commands` and `app/Providers`. A new dependency also makes a version conflict when a user installs `pet` in the tree of a Laravel application.
 
+Point `bin` of `composer.json` at `builds/pet`, and give the dist five files: `builds/pet`, `LICENSE.md`, `composer.json`, `app/Composer/Gate.php` and `app/Composer/Plugin.php`. `.gitattributes` sets `export-ignore` on each other path. Test the shape with `git archive --format=tar $(git write-tree) | tar -t`.
+
+Add the path to the `export-ignore` list of `.gitattributes` when you add a file or a directory at the root of the repository. A path that the list does not name goes into the dist of the next release.
+
+Give `app/Composer` no dependency on a different namespace under `App\`. Composer reads `extra.class` of `composer.json` and fails the install when `App\Composer\Plugin` is absent, and the dist holds `app/Composer` alone. `App\Composer\Gate` owns the constant `ENVIRONMENT` for this reason, and `App\Support\Invitation` reads that constant from `Gate`.
+
+Build the PHAR again with `php pet app:build` after you change a file under `app/`, `bootstrap/` or `config/`, and commit `builds/pet`. The dist holds the PHAR and holds no source of the application, thus a release of an old PHAR ships the code of the previous version.
+
 Declare `abstract` on a class that a different class extends, because `pint.json` sets `final_class` and thus makes each other class final. `app/Exceptions/PetException.php` is abstract for this reason. To signal an error that has no dedicated class, throw `App\Exceptions\Failure`.
 
 Treat each failure of a fetch as fatal. When a body is empty, or a call returns `false`, throw `App\Exceptions\FetchFailed`. An error must never look like a result that holds no change. A delta that the user did not ask for is the one exception: `pet audit <package>` warns and keeps the local report when it cannot fetch the delta of the granted version, and fails when the user names a version with `--from` and the fetch fails.
@@ -215,6 +223,8 @@ A GitHub zipball answers 403 to a request that carries no `User-Agent` header, a
 `phpstan/phpstan` ships `phpstan.phar` and 29 prebuilt `.so` files under `turbo-ext/`, one for each platform and each minor version of PHP. No `.so` file is in an `autoload` root. Test a change of a rule of section 7 against this package too.
 
 `symfony/var-dumper` changed `composer.json` alone between v7.4.14 and v7.4.15. This is the common delta.
+
+`pestphp/pest` ships an empty file at `.temp/.gitkeep`, and Pest gives that directory to PHPUnit as the cache directory. A tree that lost that file holds 295 files and hashes `tree-v1:5a95adac3eb84fe65434a4e5cfa9fad5`, and the tree of a fresh install holds 296 files and hashes `tree-v1:d91b628abb132045a6fcff2eabb9476c`, thus a grant of the first hash fails the gate of CI. When `pet audit` reports that the bytes of this package changed, run `ls vendor/pestphp/pest/.temp` first: when the directory is absent, make the file again with `mkdir -p vendor/pestphp/pest/.temp && : > vendor/pestphp/pest/.temp/.gitkeep`, and then run `./pet trust pestphp/pest`.
 
 The metadata of a package is at `https://repo.packagist.org/p2/<vendor>/<name>.json`. The array `packages.<name>` holds the newest version first, and each entry holds `version` and `dist.url`. `App\Registry\Packagist` reads this endpoint.
 

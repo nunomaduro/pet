@@ -19,7 +19,6 @@ use App\Support\Bytes;
 use App\Support\DeltaRenderer;
 use App\Support\Invitation;
 use App\Support\Json;
-use LaravelZero\Framework\Commands\Command;
 
 final class AuditCommand extends Command
 {

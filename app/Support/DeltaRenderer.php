@@ -16,8 +16,6 @@ final readonly class DeltaRenderer
 {
     private const int MAX_PATHS = 5;
 
-    private const string CONTROL_CHARACTERS = '/[\x00-\x08\x0b-\x1f\x7f]/';
-
     private Factory $components;
 
     public function __construct(
@@ -250,10 +248,6 @@ final readonly class DeltaRenderer
 
     private function escape(string $line): string
     {
-        return (string) preg_replace(
-            self::CONTROL_CHARACTERS,
-            '?',
-            str_replace(['<', '>'], ['\\<', '\\>'], $line),
-        );
+        return str_replace(['<', '>'], ['\\<', '\\>'], $line);
     }
 }

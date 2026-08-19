@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Support\Invitation;
+use App\Composer\Gate;
 use Illuminate\Support\Facades\Artisan;
 use Tests\Fixture;
 
@@ -166,13 +166,13 @@ it('orders each package by the count of files that its review costs', function (
 it('asks for the verbose flag of composer when composer runs the audit', function (): void {
     $fixture = Fixture::open('wide-delta');
 
-    putenv(Invitation::ENVIRONMENT.'=1');
+    putenv(Gate::ENVIRONMENT.'=1');
 
     try {
         $status = Artisan::call('audit', ['--path' => $fixture->rootPath]);
         $output = Artisan::output();
     } finally {
-        putenv(Invitation::ENVIRONMENT);
+        putenv(Gate::ENVIRONMENT);
         $fixture->remove();
     }
 
