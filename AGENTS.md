@@ -81,7 +81,7 @@ Give a helper under `app/Support` the output of the command and let it build its
 
 Print each text that a package holds through `App\Support\ControlSafe`, and make each components factory an `App\Support\ControlSafeComponents`. `App\Support\ControlSafeFormatter` cleans the text that `line()` and `writeln()` write, and a component reaches the formatter with its control characters already gone: Termwind parses the HTML of a component with `DOMDocument`, and libxml 2.9 deletes a control character that libxml 2.15 keeps.
 
-Keep `platform.php` at `8.3.0` in `config` of `composer.json`. `builds/pet` holds the tree that Composer resolved, thus a tree that Composer resolves against PHP 8.4 puts Symfony 8 in the PHAR and that PHAR stops on PHP 8.3 in `vendor/composer/platform_check.php`. The pin also gives each job of CI one tree, thus the ledger of this project covers the tree of each version of PHP.
+Keep `platform.php` at `8.3.0` in `config` of `composer.json`. `builds/pet` holds the tree that Composer resolved, thus a tree that Composer resolves against PHP 8.4 puts Symfony 8 in the PHAR and that PHAR stops on PHP 8.3 in `vendor/composer/platform_check.php`.
 
 Add no package to `require-dev` that requires PHP 8.4 or higher, because the pin of `platform.php` rejects it. `pestphp/pest` stays at `^4.7.8` for this reason.
 
@@ -107,7 +107,9 @@ Ask no question, in any command. The user records a grant with `pet trust`, thus
 
 Grant no permission, and add no scan that reads the code of a package. The user trusts the bytes of a package or the user does not trust them, and a list of permissions asks the user to make a second decision that `pet` cannot prove. Report a fact of the tree instead: the hash, the count of files, the bytes, the changed paths and the source of each change.
 
-Run `composer test` after you change a file of source code. The command runs `rector process --dry-run`, `pint --test`, `./pet audit`, `phpstan analyse` and `pest --parallel`. The workflow `.github/workflows/tests.yml` runs the same steps on PHP 8.3, PHP 8.4 and PHP 8.5, with `--prefer-lowest` and with `--prefer-stable`.
+Run `composer test` after you change a file of source code. The command runs `rector process --dry-run`, `pint --test`, `./pet audit`, `phpstan analyse` and `pest --parallel`. The workflow `.github/workflows/tests.yml` runs the same steps on PHP 8.3, PHP 8.4 and PHP 8.5.
+
+Install the dependencies of CI with `composer install`, and run no `composer update` in a job. `composer test` runs the gate `./pet audit`, thus a job that resolves a different tree reports a package that `pet.json` does not cover and fails on a change that the commit does not hold.
 
 ---
 
