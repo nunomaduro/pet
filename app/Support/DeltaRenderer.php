@@ -10,18 +10,17 @@ use App\Delta\Delta;
 use App\Delta\ManifestChange;
 use App\Delta\UnifiedDiff;
 use Illuminate\Console\OutputStyle;
-use Illuminate\Console\View\Components\Factory;
 
 final readonly class DeltaRenderer
 {
     private const int MAX_PATHS = 5;
 
-    private Factory $components;
+    private ControlSafeComponents $components;
 
     public function __construct(
         private OutputStyle $output,
     ) {
-        $this->components = new Factory($output);
+        $this->components = new ControlSafeComponents($output);
     }
 
     /**

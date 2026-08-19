@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
+use App\Support\ControlSafeComponents;
 use App\Support\ControlSafeFormatter;
 use LaravelZero\Framework\Commands\Command as LaravelZeroCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,5 +21,7 @@ abstract class Command extends LaravelZeroCommand
         if (! $formatter instanceof ControlSafeFormatter) {
             $output->setFormatter(new ControlSafeFormatter($formatter));
         }
+
+        $this->components = new ControlSafeComponents($this->output);
     }
 }

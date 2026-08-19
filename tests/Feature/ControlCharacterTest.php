@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Support\ControlSafeComponents;
+use Illuminate\Console\OutputStyle;
 use Illuminate\Support\Facades\Artisan;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\Fixture;
 
 it('prints no control character of a path that a package holds', function (): void {
@@ -61,4 +65,15 @@ it('prints no control character of the output of composer', function (): void {
         ->and($output)
         ->toContain('Your requirements could not be resolved.?[2K')
         ->and(str_contains($output, "\x1b"))->toBeFalse();
+});
+
+it('replaces a control character before a component renders it', function (): void {
+    $buffer = new BufferedOutput;
+
+    $components = new ControlSafeComponents(new OutputStyle(new ArrayInput([]), $buffer));
+
+    $components->twoColumnDetail("acme/widget 1.0.0\x1b[2K", 'ok');
+
+    expect($buffer->fetch())
+        ->toContain('acme/widget 1.0.0?[2K');
 });

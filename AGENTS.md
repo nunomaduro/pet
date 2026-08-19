@@ -77,7 +77,9 @@ A tool that writes a comment into a file that it owns keeps that comment. Do not
 
 Put each class under `app/` in the `App\` namespace. Use Laravel Zero, Illuminate and Symfony in `app/Commands`, `app/Providers` and `app/Support` only. Each other namespace under `App\` is the audit engine and uses the audit engine alone. When you add a namespace to the engine, add its name to the `$core` list in `tests/Arch.php`, because the test reads that list and does not find the namespace without it.
 
-Give a helper under `app/Support` the output of the command and let it build its own components: `$this->components` is protected on `Illuminate\Console\Concerns\InteractsWithIO`, thus a helper cannot read it. `App\Support\DeltaRenderer` takes an `Illuminate\Console\OutputStyle` and makes an `Illuminate\Console\View\Components\Factory` of it.
+Give a helper under `app/Support` the output of the command and let it build its own components: `$this->components` is protected on `Illuminate\Console\Concerns\InteractsWithIO`, thus a helper cannot read it. `App\Support\DeltaRenderer` takes an `Illuminate\Console\OutputStyle` and makes an `App\Support\ControlSafeComponents` of it.
+
+Print each text that a package holds through `App\Support\ControlSafe`, and make each components factory an `App\Support\ControlSafeComponents`. `App\Support\ControlSafeFormatter` cleans the text that `line()` and `writeln()` write, and a component reaches the formatter with its control characters already gone: Termwind parses the HTML of a component with `DOMDocument`, and libxml 2.9 deletes a control character that libxml 2.15 keeps.
 
 Do not add an entry to `require` in `composer.json`. The audit engine uses the core of PHP alone, and `laravel-zero/framework` serves `app/Commands` and `app/Providers`. A new dependency also makes a version conflict when a user installs `pet` in the tree of a Laravel application.
 
@@ -88,6 +90,8 @@ Add the path to the `export-ignore` list of `.gitattributes` when you add a file
 Give `app/Composer` no dependency on a different namespace under `App\`. Composer reads `extra.class` of `composer.json` and fails the install when `App\Composer\Plugin` is absent, and the dist holds `app/Composer` alone. `App\Composer\Gate` owns the constant `ENVIRONMENT` for this reason, and `App\Support\Invitation` reads that constant from `Gate`.
 
 Build the PHAR again with `php pet app:build` after you change a file under `app/`, `bootstrap/` or `config/`, and commit `builds/pet`. The dist holds the PHAR and holds no source of the application, thus a release of an old PHAR ships the code of the previous version.
+
+Keep `exclude-dev-files` false in `box.json`. `laravel-zero/framework` is in `require-dev`, thus Box dumps an autoloader that holds no framework when that option is true, and the PHAR stops with `Class "LaravelZero\Framework\Application" not found`. Run `./builds/pet audit` after each build.
 
 Declare `abstract` on a class that a different class extends, because `pint.json` sets `final_class` and thus makes each other class final. `app/Exceptions/PetException.php` is abstract for this reason. To signal an error that has no dedicated class, throw `App\Exceptions\Failure`.
 
@@ -225,6 +229,8 @@ A GitHub zipball answers 403 to a request that carries no `User-Agent` header, a
 `symfony/var-dumper` changed `composer.json` alone between v7.4.14 and v7.4.15. This is the common delta.
 
 `pestphp/pest` ships an empty file at `.temp/.gitkeep`, and Pest gives that directory to PHPUnit as the cache directory. A tree that lost that file holds 295 files and hashes `tree-v1:5a95adac3eb84fe65434a4e5cfa9fad5`, and the tree of a fresh install holds 296 files and hashes `tree-v1:d91b628abb132045a6fcff2eabb9476c`, thus a grant of the first hash fails the gate of CI. When `pet audit` reports that the bytes of this package changed, run `ls vendor/pestphp/pest/.temp` first: when the directory is absent, make the file again with `mkdir -p vendor/pestphp/pest/.temp && : > vendor/pestphp/pest/.temp/.gitkeep`, and then run `./pet trust pestphp/pest`.
+
+Ubuntu 24.04 holds libxml 2.9.14, and the machine of the developer holds libxml 2.15. The HTML parser of libxml 2.9 deletes a character between `\x00` and `\x1f`, and the parser of libxml 2.15 keeps it. Termwind gives the HTML of a component to `DOMDocument`, thus a component that receives a raw control character prints `1.0.0[2K` on the job of CI and `1.0.0?[2K` on the machine of the developer. Clean the text before the component reads it.
 
 The metadata of a package is at `https://repo.packagist.org/p2/<vendor>/<name>.json`. The array `packages.<name>` holds the newest version first, and each entry holds `version` and `dist.url`. `App\Registry\Packagist` reads this endpoint.
 

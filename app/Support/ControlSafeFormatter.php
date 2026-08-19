@@ -10,8 +10,6 @@ use Symfony\Component\Console\Formatter\WrappableOutputFormatterInterface;
 
 final readonly class ControlSafeFormatter implements WrappableOutputFormatterInterface
 {
-    private const string CONTROL_CHARACTERS = '/[\x00-\x08\x0b-\x1f\x7f]/';
-
     public function __construct(
         private OutputFormatterInterface $formatter,
     ) {}
@@ -59,6 +57,6 @@ final readonly class ControlSafeFormatter implements WrappableOutputFormatterInt
     {
         return $message === null
             ? null
-            : (string) preg_replace(self::CONTROL_CHARACTERS, '?', $message);
+            : ControlSafe::text($message);
     }
 }
