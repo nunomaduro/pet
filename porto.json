@@ -300,8 +300,8 @@
             "hash": "tree-v1:157af76b649beca07fd5edf43dc16476"
         },
         "mockery/mockery": {
-            "version": "1.6.14",
-            "hash": "tree-v1:f1bdfe9c5bdc96c4e8b84ffe44d3eadd"
+            "version": "1.6.15",
+            "hash": "tree-v1:4bc0e2fbaea02a9469caa0f1105242dc"
         },
         "myclabs/deep-copy": {
             "version": "1.14.0",
