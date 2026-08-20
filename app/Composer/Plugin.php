@@ -18,7 +18,6 @@ use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Translation\Catalogue\OperationInterface;
 
 final class Plugin implements EventSubscriberInterface, PluginInterface
 {
