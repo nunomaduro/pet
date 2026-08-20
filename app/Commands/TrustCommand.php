@@ -6,13 +6,15 @@ namespace App\Commands;
 
 use App\Delta\Delta;
 use App\Delta\DeltaResolver;
+use App\Exceptions\Failure;
 use App\Exceptions\PortoException;
-use App\Identity\Fingerprint;
+use App\Identity\TreeHash;
 use App\Ledger\Auditor;
 use App\Ledger\AuditStatus;
 use App\Ledger\Grant;
 use App\Ledger\PackageAudit;
 use App\Lock\Project;
+use App\Support\ComposerOperation;
 use App\Support\DeltaRenderer;
 
 final class TrustCommand extends Command
@@ -21,7 +23,7 @@ final class TrustCommand extends Command
      * @var string
      */
     protected $signature = 'trust
-        {packages?* : Trust these installed packages, as vendor/name}
+        {packages?* : Trust these packages, as vendor/name}
         {--from= : Show the delta from this version rather than the trusted one}
         {--notes= : A note to record alongside the entry}
         {--path= : The project directory to audit (defaults to the current one)}';
@@ -29,7 +31,7 @@ final class TrustCommand extends Command
     /**
      * @var string
      */
-    protected $description = 'Record the bytes of the installed packages that you trust, or baseline every one';
+    protected $description = 'Record the bytes that you trust, on disk and on the way in';
 
     public function handle(): int
     {
@@ -70,7 +72,7 @@ final class TrustCommand extends Command
         $this->newLine();
 
         if ($targets === []) {
-            $this->components->info(sprintf('All %d installed packages are already covered.', $report->total()));
+            $this->components->info(sprintf('All %d packages are already covered.', $report->total()));
             $this->newLine();
 
             return self::SUCCESS;
@@ -79,16 +81,12 @@ final class TrustCommand extends Command
         $this->renderTargets($targets);
 
         $created = ! $auditor->ledger->exists();
+        $unreadable = array_filter($targets, static fn (PackageAudit $audit): bool => ! $audit->hash instanceof TreeHash);
+        $recorded = array_filter($targets, static fn (PackageAudit $audit): bool => $audit->hash instanceof TreeHash);
 
         try {
-            foreach ($targets as $audit) {
-                $auditor->ledger->record(new Grant(
-                    package: $audit->package,
-                    version: $audit->version,
-                    hash: $audit->hash,
-                    dev: $audit->dev,
-                    notes: $this->stringOption('notes') ?? $audit->grant?->notes,
-                ));
+            foreach ($recorded as $audit) {
+                $auditor->ledger->record($this->grantOf($audit));
             }
 
             $auditor->ledger->save();
@@ -102,12 +100,20 @@ final class TrustCommand extends Command
         $this->components->info($created
             ? sprintf(
                 'Trusted %d package(s), and wrote %s.',
-                count($targets),
+                count($recorded),
                 $this->relative($project->rootPath, $auditor->ledger->path),
             )
-            : sprintf('Trusted %d package(s).', count($targets)));
+            : sprintf('Trusted %d package(s).', count($recorded)));
 
-        return self::SUCCESS;
+        if ($this->holdsPending($recorded)) {
+            $this->components->info('Run `composer install` to write those bytes to vendor/.');
+        }
+
+        foreach ($unreadable as $audit) {
+            $this->components->error(sprintf('%s stays unrecorded: %s', $audit->package, $audit->reason()));
+        }
+
+        return $unreadable === [] ? self::SUCCESS : self::FAILURE;
     }
 
     /**
@@ -122,9 +128,9 @@ final class TrustCommand extends Command
             $this->components->twoColumnDetail(
                 sprintf(
                     '<fg=%s>%s</> <fg=gray>%s</>%s',
-                    $audit->status === AuditStatus::Changed ? 'red' : 'yellow',
+                    $audit->status === AuditStatus::Ungranted ? 'yellow' : 'red',
                     $audit->package,
-                    $audit->version,
+                    $audit->versions(),
                     $audit->dev ? ' <fg=gray>(dev)</>' : '',
                 ),
                 sprintf('<fg=gray>%s</>', $audit->reason()),
@@ -149,11 +155,16 @@ final class TrustCommand extends Command
 
         foreach ($names as $name) {
             try {
-                $package = $auditor->installed()->get($name);
-                $fingerprint = $auditor->fingerprinter()->ofPackage($package);
-                $audit = $auditor->auditOf($package);
+                $audit = $auditor->auditOfName($name);
             } catch (PortoException $portoException) {
                 $this->components->error($portoException->getMessage());
+
+                return self::FAILURE;
+            }
+
+            if ($audit->status === AuditStatus::Unknown) {
+                $this->newLine();
+                $this->components->error($audit->cause ?? 'porto cannot read those bytes.');
 
                 return self::FAILURE;
             }
@@ -162,36 +173,30 @@ final class TrustCommand extends Command
                 $this->newLine();
                 $this->components->info(sprintf(
                     '%s %s is already covered (%s).',
-                    $package->name,
-                    $fingerprint->version,
+                    $audit->package,
+                    $audit->version,
                     $audit->reason(),
                 ));
 
                 continue;
             }
 
-            $this->renderSubject($fingerprint, $audit);
+            $this->renderSubject($audit);
 
-            $delta = $this->delta($auditor, $project, $package->name);
+            $delta = $this->delta($auditor, $project, $audit);
 
             if ($delta instanceof Delta) {
                 (new DeltaRenderer($this->output))->report($delta);
             } else {
                 $this->newLine();
-                $this->components->warn(sprintf('Review the tree at %s before you trust it.', $fingerprint->path));
+                $this->components->warn(sprintf('Review the tree at %s before you trust it.', $audit->path ?? ''));
             }
 
-            $grant = new Grant(
-                package: $package->name,
-                version: $fingerprint->version,
-                hash: $fingerprint->hash,
-                dev: $package->dev,
-                notes: $this->stringOption('notes') ?? $audit->grant?->notes,
-            );
+            $grant = $this->grantOf($audit);
 
             $auditor->ledger->record($grant);
 
-            $recorded[] = $grant;
+            $recorded[$audit->package] = $audit;
         }
 
         if ($recorded === []) {
@@ -206,28 +211,73 @@ final class TrustCommand extends Command
             return self::FAILURE;
         }
 
+        $first = array_values($recorded)[0];
+
         $this->components->info(count($recorded) === 1
             ? sprintf(
                 'Recorded %s %s at %s.',
-                $recorded[0]->package,
-                $recorded[0]->version,
-                $recorded[0]->hash->short(),
+                $first->package,
+                $first->version,
+                $first->hash instanceof TreeHash ? $first->hash->short() : '',
             )
             : sprintf('Recorded %d package(s).', count($recorded)));
+
+        if ($this->holdsPending($recorded)) {
+            $this->components->info('Run `composer install` to write those bytes to vendor/.');
+        }
 
         return self::SUCCESS;
     }
 
-    private function delta(Auditor $auditor, Project $project, string $package): ?Delta
+    private function grantOf(PackageAudit $audit): Grant
     {
-        $from = $this->stringOption('from') ?? $auditor->ledger->grantFor($package)?->version;
+        if (! $audit->hash instanceof TreeHash) {
+            throw new Failure(sprintf('The bytes of [%s] were never read.', $audit->package));
+        }
+
+        return new Grant(
+            package: $audit->package,
+            version: $audit->version,
+            hash: $audit->hash,
+            dev: $audit->dev,
+            notes: $this->stringOption('notes') ?? $audit->grant?->notes,
+        );
+    }
+
+    /**
+     * @param  array<string, PackageAudit>  $audits
+     */
+    private function holdsPending(array $audits): bool
+    {
+        foreach ($audits as $audit) {
+            if ($audit->pending()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function delta(Auditor $auditor, Project $project, PackageAudit $audit): ?Delta
+    {
+        $from = $this->stringOption('from');
+
+        if ($audit->pending() && $from === null) {
+            return $this->incomingDelta($project, $auditor, $audit);
+        }
+
+        $from ??= $audit->grant?->version;
 
         if ($from === null) {
             return null;
         }
 
         try {
-            return DeltaResolver::forProject($project)->resolve($package, $from);
+            return DeltaResolver::forProject($project)->resolve(
+                package: $audit->package,
+                from: $from,
+                to: $audit->pending() ? $audit->version : null,
+            );
         } catch (PortoException $portoException) {
             $this->components->warn(sprintf('Could not build a delta from %s: %s', $from, $portoException->getMessage()));
 
@@ -235,25 +285,54 @@ final class TrustCommand extends Command
         }
     }
 
-    private function renderSubject(Fingerprint $fingerprint, PackageAudit $audit): void
+    private function incomingDelta(Project $project, Auditor $auditor, PackageAudit $audit): ?Delta
+    {
+        $operation = $auditor->plan()->of($audit->package);
+
+        if (! $operation instanceof ComposerOperation) {
+            return null;
+        }
+
+        $installed = $auditor->installed();
+
+        try {
+            return DeltaResolver::forProject($project)->incoming(
+                target: $auditor->target($operation, $audit->version, $audit->dev),
+                installed: $installed->has($audit->package) ? $installed->get($audit->package) : null,
+            );
+        } catch (PortoException $portoException) {
+            $this->components->warn(sprintf('Could not build a delta: %s', $portoException->getMessage()));
+
+            return null;
+        }
+    }
+
+    private function renderSubject(PackageAudit $audit): void
     {
         $this->newLine();
         $this->components->twoColumnDetail(
-            sprintf('<options=bold>%s</>', $fingerprint->package),
+            sprintf('<options=bold>%s</>', $audit->package),
             sprintf(
                 '%s <fg=gray>(%s)</>',
-                $fingerprint->version,
+                $audit->versions(),
                 $audit->status === AuditStatus::Ungranted ? 'never trusted' : 'bytes changed',
             ),
         );
         $this->components->twoColumnDetail(
             '<fg=gray>hash</>',
-            sprintf('<fg=gray>%s (%s)</>', $fingerprint->hash, $fingerprint->source->value),
+            sprintf('<fg=gray>%s (%s)</>', (string) $audit->hash, $audit->source->value),
         );
         $this->components->twoColumnDetail(
             '<fg=gray>contents</>',
-            sprintf('<fg=gray>%d files</>', $fingerprint->files),
+            sprintf('<fg=gray>%d files</>', $audit->files),
         );
+
+        if ($audit->pending()) {
+            $this->components->twoColumnDetail(
+                '<fg=gray>state</>',
+                '<fg=gray>composer would write these bytes to vendor/</>',
+            );
+        }
     }
 
     /**

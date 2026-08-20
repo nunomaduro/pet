@@ -25,16 +25,15 @@
 <a name="introduction"></a>
 ## Introduction
 
-[porto](https://github.com/nunomaduro/porto) is a dependency audit ledger for PHP. It shows you what a `composer update` changed in the `vendor/` directory, and lets you (or your agent) review those changes, one by one.
+[porto](https://github.com/nunomaduro/porto) is a dependency audit ledger for PHP. It shows you what a `composer update` is about to write into the `vendor/` directory, and lets you (or your agent) review those changes, one by one, before they land.
 
 ```
-❯ composer update
-❯ porto audit -v
+❯ composer update carbonphp/carbon-doctrine-types
 
   to review (1, worst first)
 
-  carbonphp/carbon-doctrine-types 3.2.0 . 2 files to review (delta from 3.1.0)
-      3.1.0 was trusted, 3.2.0 is installed  ·  8.0 KB
+  carbonphp/carbon-doctrine-types 3.1.0 → 3.2.0  2 files to review (delta from 3.1.0)
+      composer would install these bytes; you trust 3.1.0  ·  8.0 KB
 
   runtime source (2)
     ~ src/Carbon/Doctrine/DateTimeImmutableType.php
@@ -63,9 +62,11 @@
   audited .................................................. 124 / 125 (99.2%)
 
    ERROR  1 package(s) are not covered. Record them with `porto trust`.
+
+   WARN  composer holds those bytes out of vendor/ until you record them. Then run `composer install`.
 ```
 
-Read the diffs, then record them with `porto trust carbonphp/carbon-doctrine-types`. The next `porto audit` is green, and your build passes.
+Composer stopped before it wrote anything. Read the diffs, record them with `porto trust carbonphp/carbon-doctrine-types`, then run `composer install`: the bytes that land are the bytes you read, and your build passes.
 
 <a name="installation"></a>
 ## Installation
@@ -110,12 +111,12 @@ porto trust
    INFO  Trusted 125 package(s), and wrote porto.json.
 ```
 
-This command asks no questions and reaches no network. It is the baseline of a project that has never been audited, so review the tree in `vendor/` before you run it on a project you do not know.
+This command asks no questions, and it reaches the network only for a version that `composer.lock` names and `vendor/` does not hold yet. It is the baseline of a project that has never been audited, so review the tree in `vendor/` before you run it on a project you do not know.
 
 <a name="auditing-your-dependencies"></a>
 ## Auditing Your Dependencies
 
-Once the ledger exists, run the `audit` command after every `composer update`. It reports the packages that have no entry, the packages whose contents changed, and the trees in `vendor/` that disagree with `composer.lock` — worst first, with the changed paths of each one and the number of files the review costs you:
+Once the ledger exists, run the `audit` command whenever you want to know where you stand. It reports the packages that have no entry, the packages whose contents changed, the versions that `composer.lock` names and `vendor/` does not hold yet, and the trees in `vendor/` that disagree with `composer.lock` — worst first, with the changed paths of each one and the number of files the review costs you:
 
 ```shell
 porto audit
@@ -260,7 +261,7 @@ porto preview && composer update && porto audit
 <a name="running-on-every-update"></a>
 ## Running on Every Update
 
-porto ships a Composer plugin, so the audit runs by itself. Composer asks you to trust the plugin when you install porto, and you may also allow it by hand:
+porto ships a Composer plugin, so the audit runs by itself, before Composer writes a single file. Composer asks you to trust the plugin when you install porto, and you may also allow it by hand:
 
 ```json
 {
@@ -272,37 +273,74 @@ porto ships a Composer plugin, so the audit runs by itself. Composer asks you to
 }
 ```
 
-From then on, every `composer update`, `composer require` and `composer remove` ends with the audit. The report arrives under the output of Composer, and the command exits with a non-zero status code while a package is unread:
+From then on, every `composer update`, `composer require` and `composer remove` stops at the review. Composer has resolved the versions and written `composer.lock`; porto fetches the archive of every version that is about to arrive, hashes it, and compares it against your ledger. Nothing reaches `vendor/` until you record it:
 
 ```
 ❯ composer update carbonphp/carbon-doctrine-types
 
-  Lock file operations: 0 installs, 1 update, 0 removals
-    - Upgrading carbonphp/carbon-doctrine-types (3.1.0 => 3.2.0)
+  Loading composer repositories with package information
+  Updating dependencies
+  Writing lock file
+  Installing dependencies from lock file (including require-dev)
 
   to review (1, worst first)
 
-  carbonphp/carbon-doctrine-types 3.2.0 . 2 files to review (delta from 3.1.0)
-      3.1.0 was trusted, 3.2.0 is installed  ·  8.0 KB
+  carbonphp/carbon-doctrine-types 3.1.0 → 3.2.0  2 files to review (delta from 3.1.0)
+      composer would install these bytes; you trust 3.1.0  ·  8.0 KB
 
   runtime source (2)
     ~ src/Carbon/Doctrine/DateTimeImmutableType.php
-    ~ src/Carbon/Doctrine/DateTimeType.php
+      @@ -17,7 +17,7 @@
+           /**
+            * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+            */
+      -    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?DateTimeImmutable
+      +    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?CarbonImmutable
+           {
+               return $this->doConvertToPHPValue($value);
+           }
 
-  audited .................................................... 75 / 76 (98.7%)
+  audited ........................................................ 1 / 2 (50%)
 
-   ERROR  1 package(s) are not covered. Read the source of their changes with `composer update -v`, then record them with `porto trust`.
+   ERROR  1 package(s) are not covered. Read every change with `composer update -v`, then record them with `porto trust`.
+
+   WARN  composer holds those bytes out of vendor/ until you record them. Then run `composer install`.
 ```
 
 Composer runs the audit, so the report asks for `composer update -v`. That option reaches the audit, and the source of every change arrives under the output of Composer.
 
-The update itself is already on disk when the report arrives. Nothing is undone, and nothing is blocked: the exit code is what stops the next step of your script or your pipeline. Read the changes, then record them:
+The version in the diff is the version you do not have yet. Read it, then record it. The entry you write holds the hash of the tree that is about to arrive:
 
-```shell
-porto trust carbonphp/carbon-doctrine-types
+```
+❯ porto trust carbonphp/carbon-doctrine-types
+
+   INFO  Recorded carbonphp/carbon-doctrine-types 3.2.0 at ad33848c07e8.
+
+   INFO  Run `composer install` to write those bytes to vendor/.
 ```
 
-A project that has no ledger yet is not failed. The plugin says so once, and leaves your update alone:
+`composer install` takes the versions that are already in your lock file. The audit runs again, finds them covered, and Composer writes them:
+
+```
+❯ composer install
+
+  Installing dependencies from lock file (including require-dev)
+
+   INFO  All 2 packages are covered.
+
+  Package operations: 0 installs, 1 update, 0 removals
+    - Upgrading carbonphp/carbon-doctrine-types (3.1.0 => 3.2.0): Extracting archive
+```
+
+The bytes that land are the bytes you read: the hash porto recorded before the install is the hash `porto audit carbonphp/carbon-doctrine-types` reads from `vendor/` after it. If you would rather abandon the update, `git checkout composer.lock` puts your lock file back.
+
+Two runs are not gated. A `--dry-run` writes nothing, so it is left alone. The first install of a project has no tree to audit an update against, so the plugin says as much and audits the result when the install is done:
+
+```
+porto audits an update against the installed tree. This project installs no package yet, so the audit runs after this install.
+```
+
+A project that has no ledger yet is not failed either. The plugin says so once, and leaves your update alone:
 
 ```
 porto has no ledger in this project yet. Run `porto trust` to record what you trust today.
@@ -313,13 +351,13 @@ porto has no ledger in this project yet. Run `porto trust` to record what you tr
 
 | Command | Function |
 |---|---|
-| `porto audit` | show what is unaudited, worst first, with the reviewable delta of each package, the source of each change and the count of files that each review costs, and exit non-zero when a package is ungranted, when its contents changed, or when `vendor/` disagrees with `composer.lock` |
+| `porto audit` | show what is unaudited, worst first, with the reviewable delta of each package, the source of each change and the count of files that each review costs, and exit non-zero when a package is ungranted, when its contents changed, or when `vendor/` disagrees with `composer.lock`; `--plan` names the operations that Composer is about to run |
 | `porto audit -v` | show the same report with every changed path, and not the first 5 of a bucket |
 | `porto audit <package>` | show the content hash, the count of files, the size and the reviewable delta in buckets, with the source of each change; `--from` names the version to compare from |
 | `porto audit <package> -v` | show the same report with every changed path, and not the first 5 of a bucket |
 | `porto preview` | show what the next `composer update` changes, with the reviewable delta of each package and the source of each change, before `vendor/` is touched |
 | `porto preview -v` | show the same report with every changed path, and not the first 5 of a bucket |
-| `porto trust` | trust each installed package at the tree on disk, and make the ledger |
+| `porto trust` | trust each package that `porto audit` reports, at the tree on disk and at the tree of each pending install, and make the ledger |
 | `porto trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `porto.json` |
 
 `porto` with no argument runs `porto audit`.

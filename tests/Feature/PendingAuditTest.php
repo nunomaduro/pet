@@ -1,0 +1,114 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Support\Facades\Artisan;
+use Tests\PendingUpdate;
+
+it('audits the bytes that composer would write, and does not pass them', function (): void {
+    $project = PendingUpdate::create();
+    $project->lockAt(PendingUpdate::TARGET_VERSION);
+
+    try {
+        $status = Artisan::call('audit', ['--path' => $project->rootPath]);
+        $output = Artisan::output();
+    } finally {
+        $project->remove();
+    }
+
+    expect($status)->toBe(1)
+        ->and($output)
+        ->toContain('acme/widget 1.0.0 → 2.0.0')
+        ->toContain('composer would install these bytes; you trust 1.0.0')
+        ->toContain('install-time manifest')
+        ->toContain('composer holds those bytes out of vendor/ until you record them');
+});
+
+it('records the bytes of the next install, while vendor/ holds the old ones', function (): void {
+    $project = PendingUpdate::create();
+    $project->lockAt(PendingUpdate::TARGET_VERSION);
+
+    try {
+        $trusted = Artisan::call('trust', ['--path' => $project->rootPath]);
+        $trustOutput = Artisan::output();
+
+        $ledger = $project->ledger();
+        $targetHash = $project->targetHash();
+        $installed = (string) file_get_contents($project->installedFile());
+
+        $audited = Artisan::call('audit', [
+            '--path' => $project->rootPath,
+            '--plan' => $project->planFile(),
+        ]);
+    } finally {
+        $project->remove();
+    }
+
+    expect($trusted)->toBe(0)
+        ->and($trustOutput)->toContain('Run `composer install` to write those bytes to vendor/.')
+        ->and($ledger)
+        ->toContain('"version": "2.0.0"')
+        ->toContain($targetHash)
+        ->and($installed)->toContain("return 'widget';")
+        ->and($audited)->toBe(0);
+});
+
+it('shows the delta of the incoming bytes against the installed tree', function (): void {
+    $project = PendingUpdate::create();
+    $project->lockAt(PendingUpdate::TARGET_VERSION);
+
+    try {
+        $status = Artisan::call('trust', [
+            'packages' => [PendingUpdate::PACKAGE],
+            '--path' => $project->rootPath,
+            '-v' => true,
+        ]);
+        $output = Artisan::output();
+    } finally {
+        $project->remove();
+    }
+
+    expect($status)->toBe(0)
+        ->and($output)
+        ->toContain('composer would write these bytes to vendor/')
+        ->toContain('src/Widget.php')
+        ->toContain("return 'gadget';")
+        ->toContain('bin/widget.phar');
+});
+
+it('names the incoming bytes that it cannot read, and blocks them', function (): void {
+    $project = PendingUpdate::create();
+    $project->lockWithoutDist('2.0.0');
+
+    try {
+        $status = Artisan::call('audit', ['--path' => $project->rootPath]);
+        $output = Artisan::output();
+
+        $trusted = Artisan::call('trust', ['--path' => $project->rootPath]);
+        $trustOutput = Artisan::output();
+    } finally {
+        $project->remove();
+    }
+
+    expect($status)->toBe(1)
+        ->and($output)
+        ->toContain('bytes not readable')
+        ->toContain('porto cannot read those bytes')
+        ->toContain('has no dist URL')
+        ->and($trusted)->toBe(1)
+        ->and($trustOutput)->toContain('acme/widget stays unrecorded');
+});
+
+it('audits the tree on disk when composer plans nothing', function (): void {
+    $project = PendingUpdate::create();
+
+    try {
+        $status = Artisan::call('audit', ['--path' => $project->rootPath]);
+        $output = Artisan::output();
+    } finally {
+        $project->remove();
+    }
+
+    expect($status)->toBe(0)
+        ->and($output)->toContain('All 1 packages are covered.');
+});

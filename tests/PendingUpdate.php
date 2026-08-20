@@ -52,12 +52,65 @@ final readonly class PendingUpdate
         $project->seedMetadata();
         $project->seedInstalledTree();
         $project->seedComposerFiles();
+        $project->lockAt(self::TRUSTED_VERSION, self::TRUSTED_REFERENCE);
         $project->seedLedger();
         $project->seedComposer($plan, $exitCode);
 
         putenv('PORTO_CACHE_DIR='.$project->cachePath);
 
         return $project;
+    }
+
+    public function lockAt(string $version, ?string $reference = null): void
+    {
+        $entry = $this->metadataOf($version, $reference ?? self::TARGET_REFERENCE);
+
+        $this->write($this->rootPath.'/composer.lock', Json::encode([
+            'content-hash' => 'pending',
+            'packages' => [$entry],
+            'packages-dev' => [],
+        ]));
+    }
+
+    public function lockWithoutDist(string $version): void
+    {
+        $entry = $this->metadataOf($version, self::TARGET_REFERENCE);
+
+        unset($entry['dist']);
+
+        $this->write($this->rootPath.'/composer.lock', Json::encode([
+            'content-hash' => 'pending',
+            'packages' => [$entry],
+            'packages-dev' => [],
+        ]));
+    }
+
+    public function planFile(string $change = 'upgrade', string $from = self::TRUSTED_VERSION, string $to = self::TARGET_VERSION): string
+    {
+        $path = $this->rootPath.'/composer-plan.json';
+
+        $this->write($path, Json::encode([
+            'operations' => [[
+                'package' => self::PACKAGE,
+                'change' => $change,
+                'from' => $from,
+                'to' => $to,
+                'dist_url' => $this->distUrl($to),
+                'dist_reference' => self::TARGET_REFERENCE,
+            ]],
+        ]));
+
+        return $path;
+    }
+
+    public function targetHash(): string
+    {
+        return (string) Manifest::ofDirectory($this->releasePath(self::TARGET_VERSION, self::TARGET_REFERENCE))->hash();
+    }
+
+    public function ledger(): string
+    {
+        return (string) file_get_contents($this->rootPath.'/porto.json');
     }
 
     public function installedFile(): string

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Composer\Gate;
+use App\Support\ComposerPlan;
 
 function gateProject(bool $ledger, bool $binary): Gate
 {
@@ -71,4 +72,64 @@ it('reads the binary of the repository of porto itself', function (): void {
     $root = dirname(__DIR__, 2);
 
     expect((new Gate($root, $root.'/vendor/bin'))->binary())->toBe($root.'/porto');
+});
+
+it('gives the audit the plan that composer holds', function (): void {
+    $gate = gateProject(ledger: true, binary: true);
+
+    $path = $gate->writePlan([[
+        'package' => 'acme/widget',
+        'change' => 'upgrade',
+        'from' => '1.0.0',
+        'to' => '2.0.0',
+        'dist_url' => 'https://example.test/widget-2.0.0.zip',
+        'dist_reference' => 'bbbb2222',
+    ]]);
+
+    expect($path)->toBeString()
+        ->and($gate->command(decorated: false, verbose: false, planPath: $path))
+        ->toBe([PHP_BINARY, $gate->rootPath.'/vendor/bin/porto', 'audit', '--plan='.$path]);
+
+    $plan = ComposerPlan::fromFile((string) $path);
+
+    expect($plan->of('acme/widget')?->to)->toBe('2.0.0')
+        ->and($plan->of('acme/widget')?->distReference)->toBe('bbbb2222');
+
+    $gate->deletePlan($path);
+
+    expect(is_file((string) $path))->toBeFalse();
+});
+
+it('reads whether the project installs a tree today', function (): void {
+    $gate = gateProject(ledger: true, binary: true);
+
+    expect($gate->hasInstalledTree())->toBeFalse()
+        ->and($gate->firstInstallNotice())->toContain('the audit runs after this install');
+
+    $installed = $gate->rootPath.'/vendor/composer';
+
+    mkdir($installed, 0o777, true);
+    file_put_contents($installed.'/installed.json', '{"packages":[]}');
+
+    try {
+        expect($gate->hasInstalledTree())->toBeTrue()
+            ->and($gate->firstInstallNotice())->toBeNull();
+    } finally {
+        unlink($installed.'/installed.json');
+        rmdir($installed);
+    }
+});
+
+it('knows that it runs inside a composer that porto started', function (): void {
+    $gate = gateProject(ledger: true, binary: true);
+
+    putenv(Gate::ENVIRONMENT.'=1');
+
+    try {
+        expect($gate->nested())->toBeTrue();
+    } finally {
+        putenv(Gate::ENVIRONMENT);
+    }
+
+    expect($gate->nested())->toBeFalse();
 });

@@ -13,6 +13,8 @@ final readonly class ComposerOperation
         public ComposerChange $change,
         public ?string $from,
         public ?string $to,
+        public ?string $distUrl = null,
+        public ?string $distReference = null,
     ) {}
 
     public static function parse(string $line): ?self
@@ -31,6 +33,28 @@ final readonly class ComposerOperation
         return $change === ComposerChange::Remove
             ? new self($matches[2], $change, $versions[0], null)
             : new self($matches[2], $change, null, $versions[0]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    public static function fromArray(array $entry): ?self
+    {
+        $package = Json::string($entry, 'package');
+        $change = ComposerChange::tryFrom(Json::string($entry, 'change') ?? '');
+
+        if ($package === null || $package === '' || ! $change instanceof ComposerChange) {
+            return null;
+        }
+
+        return new self(
+            package: $package,
+            change: $change,
+            from: Json::string($entry, 'from'),
+            to: Json::string($entry, 'to'),
+            distUrl: Json::string($entry, 'dist_url'),
+            distReference: Json::string($entry, 'dist_reference'),
+        );
     }
 
     private static function version(string $version): string

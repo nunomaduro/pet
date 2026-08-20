@@ -117,13 +117,24 @@ Install the dependencies of CI with `composer install`, and run no `composer upd
 
 | Command | Function |
 |---|---|
-| `porto audit` | show what is unaudited, worst first, with the count of files that each review costs, and exit non-zero when a package is ungranted, when its bytes changed, or when `vendor/` disagrees with `composer.lock` |
+| `porto audit` | show what is unaudited, worst first, with the count of files that each review costs, and exit non-zero when a package is ungranted, when its bytes changed, or when `vendor/` disagrees with `composer.lock`; `--plan` names the operations that composer is about to run |
 | `porto audit <package>` | show the content hash, the count of files, the bytes and the reviewable delta in buckets; `--from` names the version to compare from |
 | `porto audit <package> -v` | show the same report with the source of each change |
-| `porto trust` | trust each installed package at the bytes on disk, and make the ledger |
+| `porto preview` | show what the next `composer update` changes, from `composer update --dry-run`, and exit 0 |
+| `porto trust` | trust each package that `porto audit` reports, at the bytes on disk and at the bytes of each pending install, and make the ledger |
 | `porto trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `porto.json` |
 
 `porto` with no argument runs `porto audit`.
+
+Audit two subjects in each command: the tree that `vendor/` holds, and the tree that composer is about to write. A package that `composer.lock` names and `vendor/` holds at that version is `installed`, and `App\Ledger\Auditor` hashes the bytes on disk. A package that `composer.lock` names at a version that `vendor/` does not hold is `pending`, and the auditor fetches the dist archive of that version and hashes it. `App\Ledger\PackageState` holds the two cases.
+
+Read the operations of composer from the `--plan` file when the plugin gives one, and derive them from `composer.lock` against `vendor/composer/installed.json` in each other run. `App\Support\ComposerPlan::fromFile()` reads the file and `ComposerPlan::between()` derives them. `ComposerPlan::explains()` separates the two: a plan that composer wrote explains why `vendor/` disagrees with the lock file, thus `lockDiscrepancies()` reports no disagreement for a package that such a plan names. A plan that porto derived explains nothing, thus the disagreement stays an error and a job of CI that never ran `composer install` still fails.
+
+Report a pending package that porto cannot fetch as `AuditStatus::Unknown`, and fail. A package with no dist URL, an unreachable repository and a fetch that fails each reach this case. `porto trust` refuses to record that package and names the reason: an audit that waves through the one package it could not read is worse than no gate.
+
+Record the bytes of the pending version in `porto trust`, and not the bytes on disk. The user reviews the tree that composer is about to write, thus the entry holds the hash of that tree and the `composer install` that follows writes bytes that the ledger already covers. Tell the user to run `composer install` after a run that recorded a pending package.
+
+Compare a pending tree against the tree in `vendor/`, and reach no network for the metadata of that comparison. `App\Delta\DeltaResolver::incoming()` takes the target package and the installed package, thus the delta costs one archive and no request to Packagist. Take the dist URL and the dist reference of the target from the operation of composer first, from the entry of `composer.lock` second, and from Packagist last.
 
 Show the delta of `porto audit <package>` from the `--from` option when the user gives one, and from the version in `porto.json` when that version is not the installed version. Fetch nothing in each other case, thus the report of a covered package stays local and instant.
 
@@ -131,7 +142,7 @@ Print the source of each change with `-v`, in `porto audit <package>` and in `po
 
 Print the source of each change under the path of that change, and indent it. `App\Support\DeltaRenderer` owns that output, thus `porto audit` and `porto trust` print one format.
 
-Fetch nothing in `porto trust` with no argument, and build no delta. That command makes the baseline of a project that holds no ledger, thus it records the bytes on disk of each package that `porto audit` reports, and a fetch of one archive for each package makes the command too slow to use. `porto trust <package>` fetches the delta, because the user asks about one package.
+Fetch no archive for a package that `vendor/` holds in `porto trust` with no argument, and build no delta for it. That command makes the baseline of a project that holds no ledger, thus it records the bytes on disk of each package that `porto audit` reports, and a fetch of one archive for each package makes the command too slow to use. `porto trust` fetches the archive of each pending package, because the bytes of that package are not on disk and the count of those packages is the size of the update. `porto trust <package>` fetches the delta, because the user asks about one package.
 
 Make `porto trust` with no argument show each package with its status and the reason of that status, and record each one. The command asks nothing: section 4 holds the reason.
 
@@ -143,7 +154,11 @@ List each package that needs review, and add no option that limits the count. `p
 
 Reject `--from` in `porto trust` with no package, and in `porto trust` with more than one package. That option asks about one package, thus the command names the option and tells the user to give one package.
 
-Make `porto audit` the gate of CI: the command prints the report and exits non-zero when a package is ungranted, when its bytes changed, or when the tree in `vendor/` disagrees with `composer.lock`. `composer test` runs the gate as the script `test:dependencies`, thus a change that breaks the gate breaks the test suite.
+Make `porto audit` the gate of CI and the gate of composer: the command prints the report and exits non-zero when a package is ungranted, when its bytes changed, when porto cannot read the bytes of a pending package, or when the tree in `vendor/` disagrees with `composer.lock`. `composer test` runs the gate as the script `test:dependencies`, thus a change that breaks the gate breaks the test suite.
+
+Run the gate of composer before composer writes `vendor/`. `App\Composer\Plugin` subscribes `InstallerEvents::PRE_OPERATIONS_EXEC`, writes the operations of the transaction to a plan file with `Gate::writePlan()`, runs `porto audit --plan=<file>`, and throws `ScriptExecutionException` when that run fails. Composer stops and writes no file of a package. The plugin keeps `ScriptEvents::POST_UPDATE_CMD` and `ScriptEvents::POST_INSTALL_CMD` too: that run reads the bytes on disk, costs no request and proves that the tree that landed is the tree that the user trusted. It also covers the first install of a project, which the gate skips.
+
+Skip the gate of composer in three cases: a run that executes no operation (`InstallerEvent::isExecutingOperations()` is false, thus `--dry-run` writes nothing), a run inside a composer that porto started (`Gate::nested()` reads `PORTO_INSIDE_COMPOSER`, thus `porto preview` does not call itself), and a project that holds no `vendor/composer/installed.json`. The third case is the first install of a project: porto audits an update against the installed tree, thus that run has no tree to audit against and the hook of `POST_UPDATE_CMD` reports the result. `Gate::firstInstallNotice()` says this to the user.
 
 Exit non-zero from `porto audit <package>` when that package is ungranted or when its bytes changed. One rule holds for the two forms of the command, thus a script gates on one package.
 
@@ -244,6 +259,14 @@ Symfony 8 requires PHP `>=8.4.1`, and Pest 5 requires PHP `^8.4`, as do `pestphp
 
 PHPStan reads the `extra.phpstan.includes` of a package through `phpstan/extension-installer`, the tree holds no `phpstan/extension-installer` and `phpstan.neon.dist` holds no `includes` section: a package that ships a rule of PHPStan thus registers nothing. Write the path of `extension.neon` of that package in `includes` when you add one.
 
+Composer 2.10.1 writes `composer.lock` in `Installer::doUpdate()` before it calls `doInstall()`, `doInstall()` dispatches `InstallerEvents::PRE_OPERATIONS_EXEC`, and `InstallationManager::execute()` writes `vendor/` after that event. Thus a plugin that throws at that event stops a run that already rewrote the lock file and that wrote no file of a package. `InstallerEvents` holds that one case: no later event of composer precedes the write.
+
+Tell the user this after the gate stops a run: record the packages with `porto trust`, then run `composer install`. The lock file already names the new versions, thus `composer install` writes them and `git checkout composer.lock` abandons them.
+
+Composer loads a plugin from the local repository alone. `PluginManager::loadInstalledPlugins()` calls `loadRepository($repo, false, $rootPackage)` and gives the root package to the filter of allowed plugins, thus composer never activates the plugin of the root package. `composer update` in this repository runs `./porto audit` through the script `post-update-cmd` of `composer.json` and does not run `App\Composer\Plugin`. To test the plugin by hand, make a project, add this repository as a `path` repository, and require `nunomaduro/porto` in it.
+
+The dist archive of a version and the tree that composer installs from it hash the same. A prototype trusted `psr/log` 3.0.2 from the fetched archive at `tree-v1:0f88d9371ba05c1791394f2e0a56979e` before the install, and `porto audit psr/log` read that same hash from `vendor/psr/log` after the install. `App\Registry\Zip` skips a directory entry and `App\Identity\Manifest` walks files alone, thus an empty directory that composer creates changes no hash. This holds for a dist install: a tree that composer clones with `--prefer-source` holds `.git` and hashes differently.
+
 The metadata of a package is at `https://repo.packagist.org/p2/<vendor>/<name>.json`. The array `packages.<name>` holds the newest version first, and each entry holds `version` and `dist.url`. `App\Registry\Packagist` reads this endpoint.
 
 Read the full tree, and add no cache for speed. A hash of 6,953 files and 91.2 MB in `vendor/` takes 0.85 s.
@@ -268,11 +291,13 @@ Run `./porto audit` while `porto.json` covers each installed package: the comman
 
 Run `./porto trust <package> <package>`: the command shows the delta of each one, writes the two entries, and asks nothing. Run `./porto trust <package> <package> --from=<version>`: the command fails and tells the user to give one package.
 
+Test the gate of composer in a different project, because composer does not activate the plugin of the root package. Make a project, add this repository as a `path` repository with `symlink`, allow the plugin, require a package at an old version, and run `porto trust`. Raise the constraint of that package and run `composer update <that package>`: the command prints the delta of the version that is not installed yet, exits non-zero, writes the new version in `composer.lock` and writes no file in `vendor/`. Run `porto trust <that package>`: the entry holds the new version. Run `composer install`: the audit passes and composer extracts the archive. Run `porto audit <that package>`: the hash on disk is the hash that `porto trust` recorded before the install.
+
 ---
 
 ## 11. Out of scope
 
-Do not add a Composer plugin, and do not write an entry of `config.policy`.
+Do not write an entry of `config.policy`. The Composer plugin in `app/Composer` runs `porto audit` and writes no configuration of composer.
 
 Do not add the match of a tree against a subtree of a different package. `laravel/framework` declares `replace` for each `illuminate/*` package, thus Composer installs the monorepo or the split packages and never installs both, and the tree that the match reads is not in `vendor/`.
 

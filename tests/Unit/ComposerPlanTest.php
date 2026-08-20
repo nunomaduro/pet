@@ -2,8 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Lock\InstalledRepository;
+use App\Lock\LockFile;
+use App\Lock\Project;
 use App\Support\ComposerChange;
 use App\Support\ComposerPlan;
+use Tests\Fixture;
+use Tests\PendingUpdate;
 
 it('reads the operations of a real dry run', function (): void {
     $plan = ComposerPlan::parse((string) file_get_contents(__DIR__.'/../Fixtures/composer-update-dry-run.txt'));
@@ -52,4 +57,105 @@ it('drops the reference of a branch version', function (): void {
 
     expect($plan->operations[0]->from)->toBe('dev-main')
         ->and($plan->operations[0]->to)->toBe('dev-main');
+});
+
+it('reads the operations that composer wrote to a plan file', function (): void {
+    $path = sys_get_temp_dir().'/porto-plan-'.bin2hex(random_bytes(6)).'.json';
+
+    file_put_contents($path, json_encode(['operations' => [
+        [
+            'package' => 'acme/widget',
+            'change' => 'upgrade',
+            'from' => '1.0.0',
+            'to' => '2.0.0',
+            'dist_url' => 'https://example.test/widget-2.0.0.zip',
+            'dist_reference' => 'bbbb2222',
+        ],
+        ['package' => 'acme/legacy', 'change' => 'remove', 'from' => '0.9.0', 'to' => null],
+        ['change' => 'install', 'to' => '1.0.0'],
+    ]]));
+
+    try {
+        $plan = ComposerPlan::fromFile($path);
+    } finally {
+        unlink($path);
+    }
+
+    $widget = $plan->of('acme/widget');
+
+    expect($plan->operations)->toHaveCount(2)
+        ->and($plan->explains())->toBeTrue()
+        ->and($widget?->change)->toBe(ComposerChange::Upgrade)
+        ->and($widget?->from)->toBe('1.0.0')
+        ->and($widget?->to)->toBe('2.0.0')
+        ->and($widget?->distUrl)->toBe('https://example.test/widget-2.0.0.zip')
+        ->and($widget?->distReference)->toBe('bbbb2222')
+        ->and($plan->touches('acme/legacy'))->toBeTrue()
+        ->and($plan->incoming())->toHaveCount(1);
+});
+
+it('names an upgrade between composer.lock and the installed tree', function (): void {
+    $project = PendingUpdate::create();
+    $project->lockAt(PendingUpdate::TARGET_VERSION);
+
+    try {
+        $located = Project::at($project->rootPath);
+        $plan = ComposerPlan::between(LockFile::fromProject($located), InstalledRepository::fromProject($located));
+    } finally {
+        $project->remove();
+    }
+
+    $widget = $plan->of(PendingUpdate::PACKAGE);
+
+    expect($plan->operations)->toHaveCount(1)
+        ->and($plan->explains())->toBeFalse()
+        ->and($widget?->change)->toBe(ComposerChange::Upgrade)
+        ->and($widget?->from)->toBe('1.0.0')
+        ->and($widget?->to)->toBe('2.0.0')
+        ->and($widget?->distUrl)->toBe('https://example.test/acme-widget-2.0.0.zip');
+});
+
+it('names a downgrade between composer.lock and the installed tree', function (): void {
+    $project = PendingUpdate::create();
+    $project->lockAt('0.9.0');
+
+    try {
+        $located = Project::at($project->rootPath);
+        $plan = ComposerPlan::between(LockFile::fromProject($located), InstalledRepository::fromProject($located));
+    } finally {
+        $project->remove();
+    }
+
+    expect($plan->of(PendingUpdate::PACKAGE)?->change)->toBe(ComposerChange::Downgrade);
+});
+
+it('names a package that composer.lock holds and the tree does not', function (): void {
+    $fixture = Fixture::open('lock-drift');
+
+    try {
+        $located = Project::at($fixture->rootPath);
+        $plan = ComposerPlan::between(LockFile::fromProject($located), InstalledRepository::fromProject($located));
+    } finally {
+        $fixture->remove();
+    }
+
+    $ghost = $plan->of('acme/ghost');
+
+    expect($ghost?->change)->toBe(ComposerChange::Install)
+        ->and($ghost?->from)->toBeNull()
+        ->and($ghost?->to)->toBe('1.0.0')
+        ->and($plan->touches('acme/extra'))->toBeFalse();
+});
+
+it('holds no operation when the tree matches composer.lock', function (): void {
+    $fixture = Fixture::open('audited-project');
+
+    try {
+        $located = Project::at($fixture->rootPath);
+        $plan = ComposerPlan::between(LockFile::fromProject($located), InstalledRepository::fromProject($located));
+    } finally {
+        $fixture->remove();
+    }
+
+    expect($plan->isEmpty())->toBeTrue();
 });

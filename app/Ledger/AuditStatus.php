@@ -12,6 +12,8 @@ enum AuditStatus: string
 
     case Changed = 'changed';
 
+    case Unknown = 'unknown';
+
     public function fails(): bool
     {
         return $this !== self::Covered;

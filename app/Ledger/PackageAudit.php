@@ -12,13 +12,17 @@ final readonly class PackageAudit
     public function __construct(
         public string $package,
         public string $version,
-        public TreeHash $hash,
+        public ?TreeHash $hash,
         public bool $dev,
         public AuditStatus $status,
         public int $files,
         public int $bytes,
         public ?Grant $grant = null,
         public InstallSource $source = InstallSource::Dist,
+        public PackageState $state = PackageState::Installed,
+        public ?string $from = null,
+        public ?string $cause = null,
+        public ?string $path = null,
     ) {}
 
     public function fails(): bool
@@ -26,18 +30,49 @@ final readonly class PackageAudit
         return $this->status->fails();
     }
 
+    public function pending(): bool
+    {
+        return $this->state === PackageState::Pending;
+    }
+
+    public function versions(): string
+    {
+        return $this->from === null || $this->from === $this->version
+            ? $this->version
+            : sprintf('%s → %s', $this->from, $this->version);
+    }
+
     public function reason(): string
     {
         return match ($this->status) {
-            AuditStatus::Covered => sprintf('trusted at %s', $this->hash->short()),
-            AuditStatus::Ungranted => sprintf('no entry; this tree is %s', $this->hash->short()),
+            AuditStatus::Covered => sprintf('trusted at %s', $this->shortHash()),
+            AuditStatus::Ungranted => $this->ungrantedReason(),
             AuditStatus::Changed => $this->changedReason(),
+            AuditStatus::Unknown => $this->cause ?? 'these bytes cannot be read before they are installed',
         };
+    }
+
+    private function ungrantedReason(): string
+    {
+        return $this->pending()
+            ? sprintf('composer would install these bytes; no entry in the ledger (%s)', $this->shortHash())
+            : sprintf('no entry; this tree is %s', $this->shortHash());
     }
 
     private function changedReason(): string
     {
         $granted = $this->grant instanceof Grant ? $this->grant->version : 'nothing';
+
+        if ($this->pending()) {
+            return $this->grant instanceof Grant && $this->grant->version === $this->version
+                ? sprintf(
+                    'composer would install %s again, and its bytes changed (%s, not %s)',
+                    $this->version,
+                    $this->shortHash(),
+                    $this->grant->hash->short(),
+                )
+                : sprintf('composer would install these bytes; you trust %s', $granted);
+        }
 
         if (! $this->grant instanceof Grant || $this->grant->version !== $this->version) {
             return sprintf('%s was trusted, %s is installed', $granted, $this->version);
@@ -46,7 +81,7 @@ final readonly class PackageAudit
         $reason = sprintf(
             '%s is still installed but its bytes changed (%s, not %s)',
             $this->version,
-            $this->hash->short(),
+            $this->shortHash(),
             $this->grant->hash->short(),
         );
 
@@ -55,5 +90,10 @@ final readonly class PackageAudit
         }
 
         return $reason;
+    }
+
+    private function shortHash(): string
+    {
+        return $this->hash instanceof TreeHash ? $this->hash->short() : 'no hash';
     }
 }

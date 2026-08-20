@@ -89,6 +89,26 @@ final readonly class DeltaResolver
         return $delta->withResolution($toIsLocal, $notes);
     }
 
+    public function incoming(Package $target, ?Package $installed, bool $useCache = true): ?Delta
+    {
+        if (! $installed instanceof Package || $installed->installPath === null || ! is_dir($installed->installPath)) {
+            return null;
+        }
+
+        $delta = $this->builder->build(
+            package: $target->name,
+            fromVersion: $installed->version,
+            fromDirectory: $installed->installPath,
+            fromMetadata: $installed,
+            toVersion: $target->version,
+            toDirectory: $this->fetcher->fetch($target, $useCache),
+            toMetadata: $target,
+            source: $installed->installSource ?? InstallSource::Dist,
+        );
+
+        return $delta->withResolution(false, []);
+    }
+
     /**
      * @param  array<int, string>  $notes
      * @return array{0: string, 1: bool, 2: InstallSource}

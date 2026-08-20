@@ -90,6 +90,56 @@ final readonly class Package
         );
     }
 
+    public function withDist(?string $url, ?string $reference): self
+    {
+        if (($url === null || $url === '') && ($reference === null || $reference === '')) {
+            return $this;
+        }
+
+        return new self(
+            name: $this->name,
+            version: $this->version,
+            type: $this->type,
+            dev: $this->dev,
+            distUrl: $url === null || $url === '' ? $this->distUrl : $url,
+            distReference: $reference === null || $reference === '' ? $this->distReference : $reference,
+            distShasum: $this->distShasum,
+            sourceUrl: $this->sourceUrl,
+            sourceReference: $this->sourceReference,
+            replace: $this->replace,
+            provide: $this->provide,
+            autoload: $this->autoload,
+            bin: $this->bin,
+            installSource: $this->installSource,
+            installPath: $this->installPath,
+        );
+    }
+
+    public function withDev(bool $dev): self
+    {
+        if ($this->dev === $dev) {
+            return $this;
+        }
+
+        return new self(
+            name: $this->name,
+            version: $this->version,
+            type: $this->type,
+            dev: $dev,
+            distUrl: $this->distUrl,
+            distReference: $this->distReference,
+            distShasum: $this->distShasum,
+            sourceUrl: $this->sourceUrl,
+            sourceReference: $this->sourceReference,
+            replace: $this->replace,
+            provide: $this->provide,
+            autoload: $this->autoload,
+            bin: $this->bin,
+            installSource: $this->installSource,
+            installPath: $this->installPath,
+        );
+    }
+
     /**
      * @return array<int, string>
      */

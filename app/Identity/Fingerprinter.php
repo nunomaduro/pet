@@ -8,16 +8,18 @@ use App\Exceptions\Failure;
 use App\Lock\InstalledRepository;
 use App\Lock\Package;
 use App\Lock\Project;
+use App\Registry\ArchiveFetcher;
 
 final readonly class Fingerprinter
 {
     public function __construct(
         private InstalledRepository $installed,
+        private ArchiveFetcher $fetcher,
     ) {}
 
     public static function forProject(Project $project): self
     {
-        return new self(InstalledRepository::fromProject($project));
+        return new self(InstalledRepository::fromProject($project), ArchiveFetcher::default());
     }
 
     public function of(string $package): Fingerprint
@@ -39,6 +41,22 @@ final readonly class Fingerprinter
             source: $package->installSource ?? InstallSource::Dist,
             hash: $manifest->hash(),
             path: $package->installPath,
+            files: $manifest->count(),
+            bytes: $manifest->bytes(),
+        );
+    }
+
+    public function ofIncoming(Package $target, bool $useCache = true): Fingerprint
+    {
+        $directory = $this->fetcher->fetch($target, $useCache);
+        $manifest = Manifest::ofDirectory($directory);
+
+        return new Fingerprint(
+            package: $target->name,
+            version: $target->version,
+            source: InstallSource::Dist,
+            hash: $manifest->hash(),
+            path: $directory,
             files: $manifest->count(),
             bytes: $manifest->bytes(),
         );
