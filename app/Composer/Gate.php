@@ -40,7 +40,7 @@ final readonly class Gate
     /**
      * @return array<int, string>|null
      */
-    public function command(bool $decorated, bool $verbose = false, ?string $planPath = null): ?array
+    public function command(bool $verbose = false, ?string $planPath = null): ?array
     {
         $binary = $this->binary();
 
@@ -48,14 +48,10 @@ final readonly class Gate
             return null;
         }
 
-        $command = [PHP_BINARY, $binary, 'audit'];
+        $command = [PHP_BINARY, $binary, 'audit', '--ansi'];
 
         if ($planPath !== null) {
             $command[] = '--plan='.$planPath;
-        }
-
-        if ($decorated) {
-            $command[] = '--ansi';
         }
 
         if ($verbose) {

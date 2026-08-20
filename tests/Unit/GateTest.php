@@ -31,20 +31,17 @@ function gateProject(bool $ledger, bool $binary): Gate
     return new Gate($root, $binDir);
 }
 
-it('runs the audit when the project holds a ledger and the binary', function (): void {
+it('runs the audit in color when the project holds a ledger and the binary', function (): void {
     $gate = gateProject(ledger: true, binary: true);
 
-    expect($gate->command(decorated: false))->toBe([PHP_BINARY, $gate->rootPath.'/vendor/bin/porto', 'audit'])
-        ->and($gate->command(decorated: true))->toBe([PHP_BINARY, $gate->rootPath.'/vendor/bin/porto', 'audit', '--ansi'])
+    expect($gate->command())->toBe([PHP_BINARY, $gate->rootPath.'/vendor/bin/porto', 'audit', '--ansi'])
         ->and($gate->baselineNotice())->toBeNull();
 });
 
 it('passes the verbosity of composer to the audit', function (): void {
     $gate = gateProject(ledger: true, binary: true);
 
-    expect($gate->command(decorated: false, verbose: true))
-        ->toBe([PHP_BINARY, $gate->rootPath.'/vendor/bin/porto', 'audit', '-v'])
-        ->and($gate->command(decorated: true, verbose: true))
+    expect($gate->command(verbose: true))
         ->toBe([PHP_BINARY, $gate->rootPath.'/vendor/bin/porto', 'audit', '--ansi', '-v']);
 });
 
@@ -56,7 +53,7 @@ it('tells the audit that composer runs it', function (): void {
 it('asks for a baseline rather than fail a project that holds no ledger', function (): void {
     $gate = gateProject(ledger: false, binary: true);
 
-    expect($gate->command(decorated: false))->toBeNull()
+    expect($gate->command())->toBeNull()
         ->and($gate->baselineNotice())->toContain('porto trust');
 });
 
@@ -64,7 +61,7 @@ it('does nothing when the binary is gone', function (): void {
     $gate = gateProject(ledger: true, binary: false);
 
     expect($gate->binary())->toBeNull()
-        ->and($gate->command(decorated: false))->toBeNull()
+        ->and($gate->command())->toBeNull()
         ->and($gate->baselineNotice())->toBeNull();
 });
 
@@ -87,8 +84,8 @@ it('gives the audit the plan that composer holds', function (): void {
     ]]);
 
     expect($path)->toBeString()
-        ->and($gate->command(decorated: false, verbose: false, planPath: $path))
-        ->toBe([PHP_BINARY, $gate->rootPath.'/vendor/bin/porto', 'audit', '--plan='.$path]);
+        ->and($gate->command(verbose: false, planPath: $path))
+        ->toBe([PHP_BINARY, $gate->rootPath.'/vendor/bin/porto', 'audit', '--ansi', '--plan='.$path]);
 
     $plan = ComposerPlan::fromFile((string) $path);
 
