@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-final class ComposerFailed extends PortoException
+final class ComposerFailedException extends PortoException
 {
     /**
      * @param  array<int, string>  $output

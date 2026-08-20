@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use App\Delta\Bucket;
 use App\Delta\Change;
 use App\Delta\Delta;
 use App\Delta\ManifestChange;
 use App\Delta\UnifiedDiff;
+use App\Enums\BucketType;
 use Illuminate\Console\OutputStyle;
 
 final readonly class DeltaRenderer
@@ -88,7 +88,7 @@ final readonly class DeltaRenderer
     {
         $verbose = $this->output->isVerbose();
 
-        foreach (Bucket::inReviewOrder() as $bucket) {
+        foreach (BucketType::inReviewOrder() as $bucket) {
             if ($only !== null && $only !== $bucket->value) {
                 continue;
             }
@@ -103,7 +103,7 @@ final readonly class DeltaRenderer
                 '  <options=bold>%s</> <fg=gray>(%d)</>%s',
                 $bucket->label(),
                 count($changes),
-                $bucket === Bucket::Opaque ? '  <fg=red>cannot be reviewed — trust and provenance only</>' : '',
+                $bucket === BucketType::Opaque ? '  <fg=red>cannot be reviewed — trust and provenance only</>' : '',
             ));
 
             $shown = $verbose ? $changes : array_slice($changes, 0, self::MAX_PATHS);
@@ -111,7 +111,7 @@ final readonly class DeltaRenderer
             foreach ($shown as $change) {
                 $this->renderChange($delta, $change);
 
-                if ($bucket !== Bucket::Opaque) {
+                if ($bucket !== BucketType::Opaque) {
                     $this->renderPatch($change);
                 }
             }
@@ -148,7 +148,7 @@ final readonly class DeltaRenderer
             $annotation === null ? '' : sprintf('  <fg=gray>%s</>', $this->escape($annotation)),
         ));
 
-        if ($change->bucket === Bucket::InstallManifest && $delta->manifestChange instanceof ManifestChange) {
+        if ($change->bucket === BucketType::InstallManifest && $delta->manifestChange instanceof ManifestChange) {
             foreach ($delta->manifestChange->changedKeys() as $key) {
                 $this->output->writeln(sprintf(
                     '        <fg=gray>%s:</> %s',
@@ -226,7 +226,7 @@ final readonly class DeltaRenderer
 
         $hidden = 0;
 
-        foreach (Bucket::inReviewOrder() as $bucket) {
+        foreach (BucketType::inReviewOrder() as $bucket) {
             $hidden += max(0, count($delta->inBucket($bucket)) - self::MAX_PATHS);
         }
 

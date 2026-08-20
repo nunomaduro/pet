@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Registry;
 
-use App\Exceptions\Failure;
+use App\Exceptions\FailureException;
 use App\Lock\Package;
 use App\Support\Cache;
 use App\Support\Http;
@@ -27,7 +27,7 @@ final readonly class ArchiveFetcher
     public function fetch(Package $package, bool $useCache = true): string
     {
         if ($package->distUrl === null || $package->distUrl === '') {
-            throw new Failure(sprintf(
+            throw new FailureException(sprintf(
                 'The package [%s@%s] has no dist URL, so its bytes cannot be fetched.',
                 $package->name,
                 $package->version,
@@ -58,7 +58,7 @@ final readonly class ArchiveFetcher
             Zip::extract($archive, $staging);
 
             if (! rename($staging, $directory)) {
-                throw new Failure(sprintf('Could not move the extracted archive into [%s].', $directory));
+                throw new FailureException(sprintf('Could not move the extracted archive into [%s].', $directory));
             }
 
             file_put_contents($marker, $package->version."\n");

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use App\Exceptions\Failure;
+use App\Exceptions\FailureException;
 
 final readonly class Cache
 {
@@ -42,7 +42,7 @@ final readonly class Cache
         $path = $this->path(...$segments);
 
         if (! is_dir($path) && ! @mkdir($path, 0o777, true) && ! is_dir($path)) {
-            throw new Failure(sprintf('Could not create the cache directory [%s].', $path));
+            throw new FailureException(sprintf('Could not create the cache directory [%s].', $path));
         }
 
         return $path;
@@ -70,11 +70,11 @@ final readonly class Cache
         $directory = dirname($path);
 
         if (! is_dir($directory) && ! @mkdir($directory, 0o777, true) && ! is_dir($directory)) {
-            throw new Failure(sprintf('Could not create the cache directory [%s].', $directory));
+            throw new FailureException(sprintf('Could not create the cache directory [%s].', $directory));
         }
 
         if (@file_put_contents($path, $contents) === false) {
-            throw new Failure(sprintf('Could not write to the cache file [%s].', $path));
+            throw new FailureException(sprintf('Could not write to the cache file [%s].', $path));
         }
     }
 }

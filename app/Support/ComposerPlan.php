@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Enums\ComposerChangeType;
 use App\Lock\InstalledRepository;
 use App\Lock\LockFile;
 use App\Lock\Package;
@@ -108,7 +109,7 @@ final readonly class ComposerPlan
     {
         return array_values(array_filter(
             $this->operations,
-            static fn (ComposerOperation $operation): bool => $operation->change !== ComposerChange::Remove
+            static fn (ComposerOperation $operation): bool => $operation->change !== ComposerChangeType::Remove
                 && $operation->to !== null,
         ));
     }
@@ -118,7 +119,7 @@ final readonly class ComposerPlan
         if (! $installed instanceof Package) {
             return new ComposerOperation(
                 package: $locked->name,
-                change: ComposerChange::Install,
+                change: ComposerChangeType::Install,
                 from: null,
                 to: $locked->version,
                 distUrl: $locked->distUrl,
@@ -133,8 +134,8 @@ final readonly class ComposerPlan
         return new ComposerOperation(
             package: $locked->name,
             change: version_compare($locked->version, $installed->version, '<')
-                ? ComposerChange::Downgrade
-                : ComposerChange::Upgrade,
+                ? ComposerChangeType::Downgrade
+                : ComposerChangeType::Upgrade,
             from: $installed->version,
             to: $locked->version,
             distUrl: $locked->distUrl,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Delta;
 
+use App\Enums\BucketType;
 use App\Lock\Package;
 
 final readonly class Classifier
@@ -48,21 +49,21 @@ final readonly class Classifier
      * @param  string  $path  relative to the package root
      * @param  string|null  $file  absolute path to the file, when it exists on disk
      */
-    public function classify(string $path, ?string $file = null): Bucket
+    public function classify(string $path, ?string $file = null): BucketType
     {
         if ($this->isOpaque($path, $file)) {
-            return Bucket::Opaque;
+            return BucketType::Opaque;
         }
 
         if ($path === 'composer.json') {
-            return Bucket::InstallManifest;
+            return BucketType::InstallManifest;
         }
 
         if ($this->isRuntime($path)) {
-            return Bucket::RuntimeSource;
+            return BucketType::RuntimeSource;
         }
 
-        return Bucket::Inert;
+        return BucketType::Inert;
     }
 
     private function isOpaque(string $path, ?string $file): bool

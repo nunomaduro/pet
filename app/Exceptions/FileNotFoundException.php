@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-final class FileNotFound extends PortoException
+final class FileNotFoundException extends PortoException
 {
     public static function at(string $path, string $what): self
     {

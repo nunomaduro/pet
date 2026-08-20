@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Enums\ComposerChangeType;
 use App\Lock\InstalledRepository;
 use App\Lock\LockFile;
 use App\Lock\Project;
-use App\Support\ComposerChange;
 use App\Support\ComposerPlan;
 use Tests\Fixture;
 use Tests\PendingUpdate;
@@ -20,10 +20,10 @@ it('reads the operations of a real dry run', function (): void {
     }
 
     expect($operations)->toBe([
-        'psr/simple-cache' => [ComposerChange::Remove, '3.0.0', null],
-        'carbonphp/carbon-doctrine-types' => [ComposerChange::Upgrade, '3.1.0', '3.2.0'],
-        'psr/log' => [ComposerChange::Downgrade, '3.0.0', '2.0.0'],
-        'psr/container' => [ComposerChange::Install, null, '2.0.2'],
+        'psr/simple-cache' => [ComposerChangeType::Remove, '3.0.0', null],
+        'carbonphp/carbon-doctrine-types' => [ComposerChangeType::Upgrade, '3.1.0', '3.2.0'],
+        'psr/log' => [ComposerChangeType::Downgrade, '3.0.0', '2.0.0'],
+        'psr/container' => [ComposerChangeType::Install, null, '2.0.2'],
     ]);
 });
 
@@ -48,7 +48,7 @@ it('ignores the lines that name no operation', function (): void {
         OUTPUT);
 
     expect($plan->operations)->toHaveCount(1)
-        ->and($plan->operations[0]->change)->toBe(ComposerChange::Install)
+        ->and($plan->operations[0]->change)->toBe(ComposerChangeType::Install)
         ->and($plan->operations[0]->to)->toBe('2.0.0');
 });
 
@@ -85,7 +85,7 @@ it('reads the operations that composer wrote to a plan file', function (): void 
 
     expect($plan->operations)->toHaveCount(2)
         ->and($plan->explains())->toBeTrue()
-        ->and($widget?->change)->toBe(ComposerChange::Upgrade)
+        ->and($widget?->change)->toBe(ComposerChangeType::Upgrade)
         ->and($widget?->from)->toBe('1.0.0')
         ->and($widget?->to)->toBe('2.0.0')
         ->and($widget?->distUrl)->toBe('https://example.test/widget-2.0.0.zip')
@@ -109,7 +109,7 @@ it('names an upgrade between composer.lock and the installed tree', function ():
 
     expect($plan->operations)->toHaveCount(1)
         ->and($plan->explains())->toBeFalse()
-        ->and($widget?->change)->toBe(ComposerChange::Upgrade)
+        ->and($widget?->change)->toBe(ComposerChangeType::Upgrade)
         ->and($widget?->from)->toBe('1.0.0')
         ->and($widget?->to)->toBe('2.0.0')
         ->and($widget?->distUrl)->toBe('https://example.test/acme-widget-2.0.0.zip');
@@ -126,7 +126,7 @@ it('names a downgrade between composer.lock and the installed tree', function ()
         $project->remove();
     }
 
-    expect($plan->of(PendingUpdate::PACKAGE)?->change)->toBe(ComposerChange::Downgrade);
+    expect($plan->of(PendingUpdate::PACKAGE)?->change)->toBe(ComposerChangeType::Downgrade);
 });
 
 it('names a package that composer.lock holds and the tree does not', function (): void {
@@ -141,7 +141,7 @@ it('names a package that composer.lock holds and the tree does not', function ()
 
     $ghost = $plan->of('acme/ghost');
 
-    expect($ghost?->change)->toBe(ComposerChange::Install)
+    expect($ghost?->change)->toBe(ComposerChangeType::Install)
         ->and($ghost?->from)->toBeNull()
         ->and($ghost?->to)->toBe('1.0.0')
         ->and($plan->touches('acme/extra'))->toBeFalse();

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Lock;
 
-use App\Exceptions\InvalidJson;
-use App\Exceptions\PackageNotInstalled;
+use App\Exceptions\InvalidJsonException;
+use App\Exceptions\PackageNotInstalledException;
 use App\Support\Json;
 
 final readonly class InstalledRepository
@@ -25,7 +25,7 @@ final readonly class InstalledRepository
         $entries = Json::array($data, 'packages');
 
         if ($entries === []) {
-            throw InvalidJson::shape($path, 'expected a non-empty "packages" array. Run `composer install` first.');
+            throw InvalidJsonException::shape($path, 'expected a non-empty "packages" array. Run `composer install` first.');
         }
 
         $devNames = array_flip(array_filter(Json::array($data, 'dev-package-names'), is_string(...)));
@@ -49,7 +49,7 @@ final readonly class InstalledRepository
         }
 
         if ($packages === []) {
-            throw InvalidJson::shape($path, 'no package entries carried a name.');
+            throw InvalidJsonException::shape($path, 'no package entries carried a name.');
         }
 
         ksort($packages, SORT_STRING);
@@ -82,7 +82,7 @@ final readonly class InstalledRepository
             return $provider;
         }
 
-        throw PackageNotInstalled::named($name);
+        throw PackageNotInstalledException::named($name);
     }
 
     public function findProviderOf(string $name): ?Package

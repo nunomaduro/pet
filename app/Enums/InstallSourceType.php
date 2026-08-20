@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Identity;
+namespace App\Enums;
 
-enum InstallSource: string
+enum InstallSourceType: string
 {
     case Dist = 'dist';
     case Source = 'source';

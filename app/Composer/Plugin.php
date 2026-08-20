@@ -18,6 +18,7 @@ use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Symfony\Component\Process\Process;
+use Symfony\Component\Translation\Catalogue\OperationInterface;
 
 final class Plugin implements EventSubscriberInterface, PluginInterface
 {
@@ -60,15 +61,10 @@ final class Plugin implements EventSubscriberInterface, PluginInterface
             return;
         }
 
-        $operations = [];
-
-        foreach ($event->getTransaction()?->getOperations() ?? [] as $operation) {
-            $entry = $this->operationOf($operation);
-
-            if ($entry !== null) {
-                $operations[] = $entry;
-            }
-        }
+        $operations = array_filter(array_map(
+            fn (OperationInterface $operation): ?array => $this->operationOf($operation),
+            $event->getTransaction()?->getOperations() ?? [],
+        ));
 
         if ($operations === []) {
             return;

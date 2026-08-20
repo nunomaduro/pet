@@ -6,7 +6,7 @@ namespace App\Commands;
 
 use App\Delta\Delta;
 use App\Delta\DeltaResolver;
-use App\Exceptions\ComposerFailed;
+use App\Exceptions\ComposerFailedException;
 use App\Exceptions\PortoException;
 use App\Ledger\Ledger;
 use App\Lock\InstalledRepository;
@@ -37,14 +37,17 @@ final class PreviewCommand extends Command
 
     public function handle(): int
     {
+        $path = $this->option('path');
+        assert($path === null || is_string($path));
+
         try {
-            $project = Project::locate($this->stringOption('path') ?? (string) getcwd());
+            $project = Project::locate($path ?? (string) getcwd());
             $plan = ComposerPlanner::default()->plan($project->rootPath);
             $reviews = $this->reviews($project, $plan);
-        } catch (ComposerFailed $composerFailed) {
-            $this->components->error($composerFailed->getMessage());
+        } catch (ComposerFailedException $composerFailedException) {
+            $this->components->error($composerFailedException->getMessage());
 
-            foreach ($composerFailed->output as $line) {
+            foreach ($composerFailedException->output as $line) {
                 $this->line(sprintf('  <fg=gray>%s</>', OutputFormatter::escape($line)));
             }
 
@@ -179,12 +182,5 @@ final class PreviewCommand extends Command
         ]));
 
         return self::SUCCESS;
-    }
-
-    private function stringOption(string $name): ?string
-    {
-        $value = $this->option($name);
-
-        return is_string($value) && $value !== '' ? $value : null;
     }
 }

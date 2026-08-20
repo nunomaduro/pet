@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Lock;
 
-use App\Exceptions\FileNotFound;
+use App\Exceptions\FileNotFoundException;
 use App\Support\Json;
 use App\Support\Path;
 
@@ -34,7 +34,7 @@ final readonly class Project
             $parent = dirname($directory);
 
             if ($parent === $directory) {
-                throw FileNotFound::at($from.'/composer.json', 'the project manifest');
+                throw FileNotFoundException::at($from.'/composer.json', 'the project manifest');
             }
 
             $directory = $parent;

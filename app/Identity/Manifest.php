@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Identity;
 
-use App\Exceptions\EmptyTree;
-use App\Exceptions\Failure;
+use App\Exceptions\EmptyTreeException;
+use App\Exceptions\FailureException;
 use App\Support\Path;
 
 final readonly class Manifest
@@ -21,7 +21,7 @@ final readonly class Manifest
     public static function ofDirectory(string $directory): self
     {
         if (! is_dir($directory)) {
-            throw EmptyTree::missing($directory);
+            throw EmptyTreeException::missing($directory);
         }
 
         $entries = [];
@@ -30,7 +30,7 @@ final readonly class Manifest
         self::walk($directory, '', $entries, $bytes);
 
         if ($entries === []) {
-            throw EmptyTree::at($directory);
+            throw EmptyTreeException::at($directory);
         }
 
         uksort($entries, strcmp(...));
@@ -82,7 +82,7 @@ final readonly class Manifest
         $names = @scandir($directory);
 
         if ($names === false) {
-            throw new Failure(sprintf('Could not read the directory [%s].', $directory));
+            throw new FailureException(sprintf('Could not read the directory [%s].', $directory));
         }
 
         foreach ($names as $name) {
@@ -97,7 +97,7 @@ final readonly class Manifest
                 $target = readlink($full);
 
                 if ($target === false) {
-                    throw new Failure(sprintf('Could not resolve the symlink [%s].', $full));
+                    throw new FailureException(sprintf('Could not resolve the symlink [%s].', $full));
                 }
 
                 $entries[Path::toRelativeForm($path)] = hash('sha256', $target);
@@ -114,7 +114,7 @@ final readonly class Manifest
             $hash = @hash_file('sha256', $full);
 
             if ($hash === false) {
-                throw new Failure(sprintf('Could not read the file [%s].', $full));
+                throw new FailureException(sprintf('Could not read the file [%s].', $full));
             }
 
             $entries[Path::toRelativeForm($path)] = $hash;

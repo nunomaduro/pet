@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Ledger;
 
+use App\Enums\AuditStatus;
+
 final readonly class AuditReport
 {
     /**

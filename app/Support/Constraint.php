@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use App\Exceptions\Failure;
+use App\Exceptions\FailureException;
 
 final readonly class Constraint
 {
@@ -21,7 +21,7 @@ final readonly class Constraint
         $trimmed = trim($expression);
 
         if ($trimmed === '') {
-            throw new Failure('An empty version constraint matches nothing; say "*" if you mean everything.');
+            throw new FailureException('An empty version constraint matches nothing; say "*" if you mean everything.');
         }
 
         $alternatives = [];
@@ -41,7 +41,7 @@ final readonly class Constraint
         }
 
         if ($alternatives === []) {
-            throw new Failure(sprintf('Could not read the version constraint [%s].', $expression));
+            throw new FailureException(sprintf('Could not read the version constraint [%s].', $expression));
         }
 
         return new self($alternatives, $trimmed);

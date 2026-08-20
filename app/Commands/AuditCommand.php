@@ -6,9 +6,9 @@ namespace App\Commands;
 
 use App\Delta\Delta;
 use App\Delta\DeltaResolver;
+use App\Enums\AuditStatus;
 use App\Exceptions\PortoException;
 use App\Ledger\Auditor;
-use App\Ledger\AuditStatus;
 use App\Ledger\PackageAudit;
 use App\Lock\Project;
 use App\Support\Bytes;
@@ -40,15 +40,19 @@ final class AuditCommand extends Command
 
     public function handle(): int
     {
+        $path = $this->option('path');
+        assert($path === null || is_string($path));
+
         try {
-            $project = Project::locate($this->stringOption('path') ?? (string) getcwd());
+            $project = Project::locate($path ?? (string) getcwd());
         } catch (PortoException $portoException) {
             $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
 
-        $package = $this->stringArgument('package');
+        $package = $this->argument('package');
+        assert($package === null || is_string($package));
 
         return $package === null
             ? $this->auditProject($project)
@@ -89,7 +93,8 @@ final class AuditCommand extends Command
 
     private function plan(): ?ComposerPlan
     {
-        $path = $this->stringOption('plan');
+        $path = $this->option('plan');
+        assert($path === null || is_string($path));
 
         return $path === null ? null : ComposerPlan::fromFile($path);
     }
@@ -260,7 +265,7 @@ final class AuditCommand extends Command
             return self::FAILURE;
         }
 
-        $requested = $this->stringOption('from') !== null;
+        $requested = $this->option('from') !== null;
         $renderer = new DeltaRenderer($this->output);
         $delta = null;
         $unresolved = null;
@@ -277,11 +282,14 @@ final class AuditCommand extends Command
         if ($audit->pending() && ! $requested) {
             $delta = $this->incomingDelta($project, $auditor, $audit);
         } elseif ($from !== null) {
+            $to = $this->option('to');
+            assert($to === null || is_string($to));
+
             try {
                 $delta = DeltaResolver::forProject($project)->resolve(
                     package: $audit->package,
                     from: $from,
-                    to: $this->stringOption('to') ?? ($audit->pending() ? $audit->version : null),
+                    to: $to ?? ($audit->pending() ? $audit->version : null),
                     useCache: $this->option('no-cache') !== true,
                 );
             } catch (PortoException $portoException) {
@@ -343,8 +351,11 @@ final class AuditCommand extends Command
             $this->relative($project->rootPath, $audit->path ?? ''),
         );
 
+        $bucket = $this->option('bucket');
+        assert($bucket === null || is_string($bucket));
+
         if ($delta instanceof Delta) {
-            $renderer->report($delta, $this->stringOption('bucket'));
+            $renderer->report($delta, $bucket);
         } else {
             $this->newLine();
 
@@ -439,7 +450,8 @@ final class AuditCommand extends Command
 
     private function deltaFrom(PackageAudit $audit): ?string
     {
-        $requested = $this->stringOption('from');
+        $requested = $this->option('from');
+        assert($requested === null || is_string($requested));
 
         if ($requested !== null) {
             return $requested;
@@ -453,19 +465,5 @@ final class AuditCommand extends Command
     private function relative(string $root, string $path): string
     {
         return str_starts_with($path, $root.'/') ? mb_substr($path, mb_strlen($root) + 1) : $path;
-    }
-
-    private function stringArgument(string $name): ?string
-    {
-        $value = $this->argument($name);
-
-        return is_string($value) && $value !== '' ? $value : null;
-    }
-
-    private function stringOption(string $name): ?string
-    {
-        $value = $this->option($name);
-
-        return is_string($value) && $value !== '' ? $value : null;
     }
 }

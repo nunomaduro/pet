@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Support;
+namespace App\Enums;
 
-enum ComposerChange: string
+enum ComposerChangeType: string
 {
     case Install = 'install';
 
@@ -32,9 +32,9 @@ enum ComposerChange: string
     public function weight(): int
     {
         return match ($this) {
-            self::Upgrade, self::Downgrade => 0,
-            self::Install => 1,
             self::Remove => 2,
+            self::Install => 1,
+            self::Upgrade, self::Downgrade => 0,
         };
     }
 }

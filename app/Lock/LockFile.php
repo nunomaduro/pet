@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Lock;
 
-use App\Exceptions\InvalidJson;
+use App\Exceptions\InvalidJsonException;
 use App\Support\Json;
 
 final readonly class LockFile
@@ -42,7 +42,7 @@ final readonly class LockFile
         }
 
         if ($packages === []) {
-            throw InvalidJson::shape($path, 'the lock file lists no packages.');
+            throw InvalidJsonException::shape($path, 'the lock file lists no packages.');
         }
 
         ksort($packages, SORT_STRING);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ledger;
 
-use App\Exceptions\Failure;
+use App\Exceptions\FailureException;
 use App\Identity\TreeHash;
 use App\Support\Json;
 
@@ -27,7 +27,7 @@ final readonly class Grant
         $hash = Json::string($data, 'hash');
 
         if ($version === null || $hash === null) {
-            throw new Failure(sprintf('The entry for [%s] needs a "version" and a "hash".', $package));
+            throw new FailureException(sprintf('The entry for [%s] needs a "version" and a "hash".', $package));
         }
 
         return new self(

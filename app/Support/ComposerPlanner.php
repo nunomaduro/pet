@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use App\Exceptions\ComposerFailed;
+use App\Exceptions\ComposerFailedException;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
@@ -36,7 +36,7 @@ final readonly class ComposerPlanner
         $output = $process->getOutput()."\n".$process->getErrorOutput();
 
         if (! $process->isSuccessful()) {
-            throw ComposerFailed::planFailed($rootPath, $process->getExitCode(), $output);
+            throw ComposerFailedException::planFailed($rootPath, $process->getExitCode(), $output);
         }
 
         return ComposerPlan::parse($output);
@@ -51,7 +51,7 @@ final readonly class ComposerPlanner
         $executable = (new ExecutableFinder)->find($this->binary);
 
         if ($executable === null) {
-            throw ComposerFailed::missing($this->binary);
+            throw ComposerFailedException::missing($this->binary);
         }
 
         return $executable;

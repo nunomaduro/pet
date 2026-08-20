@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Lock;
 
-use App\Identity\InstallSource;
+use App\Enums\InstallSourceType;
 use App\Support\Json;
 use App\Support\Path;
 
@@ -20,18 +20,18 @@ final readonly class Package
         public string $name,
         public string $version,
         public string $type,
-        public bool $dev,
-        public ?string $distUrl,
-        public ?string $distReference,
-        public ?string $distShasum,
-        public ?string $sourceUrl,
-        public ?string $sourceReference,
-        public array $replace,
-        public array $provide,
-        public array $autoload,
-        public array $bin,
-        public ?InstallSource $installSource = null,
-        public ?string $installPath = null,
+        public bool               $dev,
+        public ?string            $distUrl,
+        public ?string            $distReference,
+        public ?string            $distShasum,
+        public ?string            $sourceUrl,
+        public ?string            $sourceReference,
+        public array              $replace,
+        public array              $provide,
+        public array              $autoload,
+        public array              $bin,
+        public ?InstallSourceType $installSource = null,
+        public ?string            $installPath = null,
     ) {}
 
     /**
@@ -83,7 +83,7 @@ final readonly class Package
             provide: $base->provide,
             autoload: $base->autoload,
             bin: $base->bin,
-            installSource: InstallSource::fromComposer(Json::string($data, 'installation-source')),
+            installSource: InstallSourceType::fromComposer(Json::string($data, 'installation-source')),
             installPath: $installPath === null
                 ? null
                 : Path::normalize(Path::join($vendorComposerPath, $installPath)),

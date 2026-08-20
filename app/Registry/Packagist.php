@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Registry;
 
-use App\Exceptions\Failure;
+use App\Exceptions\FailureException;
 use App\Lock\Package;
 use App\Support\Cache;
 use App\Support\Http;
@@ -59,7 +59,7 @@ final class Packagist
         $decoded = json_decode($body, true);
 
         if (! is_array($decoded)) {
-            throw new Failure(sprintf('Packagist returned unreadable metadata for [%s].', $package));
+            throw new FailureException(sprintf('Packagist returned unreadable metadata for [%s].', $package));
         }
 
         /** @var array<string, mixed> $decoded */
@@ -67,7 +67,7 @@ final class Packagist
         $entries = is_array($packages[$package] ?? null) ? $packages[$package] : null;
 
         if (! is_array($entries) || $entries === []) {
-            throw new Failure(sprintf('Packagist knows no released versions of [%s].', $package));
+            throw new FailureException(sprintf('Packagist knows no released versions of [%s].', $package));
         }
 
         if (MinifiedMetadata::isMinified($decoded)) {
@@ -92,7 +92,7 @@ final class Packagist
         }
 
         if ($versions === []) {
-            throw new Failure(sprintf('Packagist returned no usable version entries for [%s].', $package));
+            throw new FailureException(sprintf('Packagist returned no usable version entries for [%s].', $package));
         }
 
         return $this->memoized[$package] = $versions;
@@ -108,7 +108,7 @@ final class Packagist
             }
         }
 
-        throw new Failure(sprintf(
+        throw new FailureException(sprintf(
             'Packagist has no version [%s] of [%s]. Known versions include: %s.',
             $version,
             $package,
@@ -151,7 +151,7 @@ final class Packagist
     private function assertValidName(string $package): void
     {
         if (preg_match('#^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9](([_.]|-{1,2})?[a-z0-9]+)*$#i', $package) !== 1) {
-            throw new Failure(sprintf('[%s] is not a valid package name; expected "vendor/name".', $package));
+            throw new FailureException(sprintf('[%s] is not a valid package name; expected "vendor/name".', $package));
         }
     }
 }

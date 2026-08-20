@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Delta\Delta;
+use App\Enums\ComposerChangeType;
 
 final readonly class PlannedReview
 {
@@ -41,7 +42,7 @@ final readonly class PlannedReview
                 : sprintf('%d files to review (delta from %s)', count($delta->changes()), $delta->from);
         }
 
-        return $this->operation->change === ComposerChange::Install
+        return $this->operation->change === ComposerChangeType::Install
             ? 'whole package to review (new)'
             : 'nothing to review (removed)';
     }
@@ -49,8 +50,8 @@ final readonly class PlannedReview
     public function reason(): string
     {
         return match ($this->operation->change) {
-            ComposerChange::Install => 'composer would add this package to the tree',
-            ComposerChange::Remove => 'composer would take this package out of the tree',
+            ComposerChangeType::Install => 'composer would add this package to the tree',
+            ComposerChangeType::Remove => 'composer would take this package out of the tree',
             default => $this->trusted === null
                 ? sprintf('no entry in the ledger; compared from the installed %s', $this->operation->from)
                 : sprintf('you trust %s', $this->trusted),

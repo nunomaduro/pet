@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Identity;
 
-use App\Exceptions\Failure;
+use App\Enums\InstallSourceType;
+use App\Exceptions\FailureException;
 use App\Lock\InstalledRepository;
 use App\Lock\Package;
 use App\Lock\Project;
@@ -30,7 +31,7 @@ final readonly class Fingerprinter
     public function ofPackage(Package $package): Fingerprint
     {
         if ($package->installPath === null) {
-            throw new Failure(sprintf('The package [%s] has no recorded install path.', $package->name));
+            throw new FailureException(sprintf('The package [%s] has no recorded install path.', $package->name));
         }
 
         $manifest = Manifest::ofDirectory($package->installPath);
@@ -38,7 +39,7 @@ final readonly class Fingerprinter
         return new Fingerprint(
             package: $package->name,
             version: $package->version,
-            source: $package->installSource ?? InstallSource::Dist,
+            source: $package->installSource ?? InstallSourceType::Dist,
             hash: $manifest->hash(),
             path: $package->installPath,
             files: $manifest->count(),
@@ -54,7 +55,7 @@ final readonly class Fingerprinter
         return new Fingerprint(
             package: $target->name,
             version: $target->version,
-            source: InstallSource::Dist,
+            source: InstallSourceType::Dist,
             hash: $manifest->hash(),
             path: $directory,
             files: $manifest->count(),

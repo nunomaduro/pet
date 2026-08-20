@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Delta;
+namespace App\Enums;
 
 enum ChangeStatus: string
 {

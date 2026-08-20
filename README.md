@@ -61,7 +61,7 @@
 
   audited .................................................. 124 / 125 (99.2%)
 
-   ERROR  1 package(s) are not covered. Record them with `porto trust`.
+   ERROR  1 package(s) are not covered. Read every change with `composer update -v`, then record them with `porto trust`.
 
    WARN  composer holds those bytes out of vendor/ until you record them. Then run `composer install`.
 ```
@@ -116,7 +116,7 @@ This command asks no questions, and it reaches the network only for a version th
 <a name="auditing-your-dependencies"></a>
 ## Auditing Your Dependencies
 
-Once the ledger exists, run the `audit` command whenever you want to know where you stand. It reports the packages that have no entry, the packages whose contents changed, the versions that `composer.lock` names and `vendor/` does not hold yet, and the trees in `vendor/` that disagree with `composer.lock` — worst first, with the changed paths of each one and the number of files the review costs you:
+Once the ledger exists, run the `audit` command whenever you want to know where you stand. It reports the packages that have no entry, the packages whose contents changed, the versions that `composer.lock` names and `vendor/` does not hold yet, and the trees in `vendor/` that disagree with `composer.lock` — worst first, with the changed paths of each one, the source of each change and the number of files the review costs you:
 
 ```shell
 porto audit
@@ -138,10 +138,10 @@ porto audit symfony/console
 ```
 
 ```
-  symfony/console ..................................................... v8.1.4
-  hash .............................. tree-v1:6278de8094075df5a00680affe1bc1a0
+  symfony/console .................................................... v7.4.16
+  hash .............................. tree-v1:6bcaeda34b1df22209a4ea023cf74641
   source ................................................................ dist
-  contents ............................................... 182 files, 755.3 KB
+  contents ............................................... 140 files, 618.2 KB
   path ................................................ vendor/symfony/console
 ```
 
@@ -154,30 +154,30 @@ porto audit carbonphp/carbon-doctrine-types --from=3.1.0
 <a name="reviewing-the-source-of-a-change"></a>
 ### Reviewing the Source of a Change
 
-By default, a delta names up to five changed paths of each bucket, counts the paths that remain, and shows no source. You may read every path and the source of every change by providing the `-v` option, on the full report or on a single package:
+Changes arrive in four buckets, worst first: the install-time manifest, where `scripts`, `bin` and plugin classes live; the opaque artifacts that cannot be reviewed; the runtime source; and the inert files, such as tests and documentation.
+
+Every report holds the source of the changes it shows. A delta shows the first five changed paths of each bucket and counts the paths that remain, and the `-v` option shows every one of them, on the full report or on a single package:
 
 ```shell
 porto audit carbonphp/carbon-doctrine-types -v
 ```
 
-Changes arrive in four buckets, worst first: the install-time manifest, where `scripts`, `bin` and plugin classes live; the opaque artifacts that cannot be reviewed; the runtime source; and the inert files, such as tests and documentation.
+Some files hold no readable source. porto tells you so, and shows you no diff of them. You may read one bucket at a time using the `--bucket` option:
 
-Some files hold no readable source. porto tells you so, and shows you no diff of them:
+```shell
+porto audit laravel/pint --from=v1.30.4 --bucket=opaque
+```
 
 ```
-❯ porto audit laravel/pint --from=v1.30.4 -v
+  laravel/pint ....................................................... v1.30.5
+  hash .............................. tree-v1:157af76b649beca07fd5edf43dc16476
+  source ................................................................ dist
+  contents .................................................. 8 files, 21.5 MB
+  path ................................................... vendor/laravel/pint
 
-  install-time manifest (1)
-    ~ composer.json  require
-      @@ -16,7 +16,7 @@
-               }
-           ],
-           "require": {
-      -        "php": "^8.2.0",
-      +        "php": "^8.3.0",
-               "ext-json": "*",
-               "ext-mbstring": "*",
-               "ext-tokenizer": "*",
+  delta (v1.30.4 → v1.30.5)
+  identity ................................ 012d3f194967 → 157af76b649b (dist)
+  compared against ....................................... your installed tree
 
   opaque artifact (1)  cannot be reviewed — trust and provenance only
     ~ builds/pint
@@ -217,30 +217,6 @@ porto preview
 
   runtime source (2)
     ~ src/Carbon/Doctrine/DateTimeImmutableType.php
-    ~ src/Carbon/Doctrine/DateTimeType.php
-
-  psr/container 2.0.2 .......................... whole package to review (new)
-      composer would add this package to the tree
-  psr/simple-cache 3.0.0 ......................... nothing to review (removed)
-      composer would take this package out of the tree
-
-   INFO  3 package(s) change. Read the source of their changes with `porto preview -v`, then run `composer update`.
-```
-
-A package that arrives for the first time has nothing to compare against, so the whole package is the review. A package that leaves takes its files with it. Every version that moves arrives as a delta, and you may read the source of each change with the `-v` option:
-
-```shell
-porto preview -v
-```
-
-```
-  to review (3, worst first)
-
-  carbonphp/carbon-doctrine-types 3.1.0 → 3.2.0 ............ 2 files to review
-      you trust 3.1.0
-
-  runtime source (2)
-    ~ src/Carbon/Doctrine/DateTimeImmutableType.php
       @@ -17,7 +17,7 @@
            /**
             * @SuppressWarnings(PHPMD.UnusedFormalParameter)
@@ -250,6 +226,30 @@ porto preview -v
            {
                return $this->doConvertToPHPValue($value);
            }
+
+    ~ src/Carbon/Doctrine/DateTimeType.php
+      @@ -17,7 +17,7 @@
+           /**
+            * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+            */
+      -    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?DateTime
+      +    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?Carbon
+           {
+               return $this->doConvertToPHPValue($value);
+           }
+
+  psr/container 2.0.2 .......................... whole package to review (new)
+      composer would add this package to the tree
+  psr/simple-cache 3.0.0 ......................... nothing to review (removed)
+      composer would take this package out of the tree
+
+   INFO  3 package(s) change. Read every change with `porto preview -v`, then run `composer update`.
+```
+
+A package that arrives for the first time has nothing to compare against, so the whole package is the review. A package that leaves takes its files with it. Every version that moves arrives as a delta, which shows the first five changed paths of each bucket. The `-v` option shows every one of them:
+
+```shell
+porto preview -v
 ```
 
 The command reads the plan from the `composer` binary on your PATH, and it asks you nothing. It exits with a zero status code whenever the preview is complete, so you may put it in front of the update itself:
@@ -300,6 +300,17 @@ From then on, every `composer update`, `composer require` and `composer remove` 
                return $this->doConvertToPHPValue($value);
            }
 
+    ~ src/Carbon/Doctrine/DateTimeType.php
+      @@ -17,7 +17,7 @@
+           /**
+            * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+            */
+      -    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?DateTime
+      +    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?Carbon
+           {
+               return $this->doConvertToPHPValue($value);
+           }
+
   audited ........................................................ 1 / 2 (50%)
 
    ERROR  1 package(s) are not covered. Read every change with `composer update -v`, then record them with `porto trust`.
@@ -307,9 +318,9 @@ From then on, every `composer update`, `composer require` and `composer remove` 
    WARN  composer holds those bytes out of vendor/ until you record them. Then run `composer install`.
 ```
 
-Composer runs the audit, so the report asks for `composer update -v`. That option reaches the audit, and the source of every change arrives under the output of Composer.
+Composer runs the audit, so the report asks for `composer update -v`. That option reaches the audit, and every changed path arrives under the output of Composer.
 
-The version in the diff is the version you do not have yet. Read it, then record it. The entry you write holds the hash of the tree that is about to arrive:
+The version in the diff is the version you do not have yet. Read it, then record it. The `trust` command shows you the delta once more, and the entry it writes holds the hash of the tree that is about to arrive:
 
 ```
 ❯ porto trust carbonphp/carbon-doctrine-types
@@ -353,14 +364,14 @@ porto has no ledger in this project yet. Run `porto trust` to record what you tr
 |---|---|
 | `porto audit` | show what is unaudited, worst first, with the reviewable delta of each package, the source of each change and the count of files that each review costs, and exit non-zero when a package is ungranted, when its contents changed, or when `vendor/` disagrees with `composer.lock`; `--plan` names the operations that Composer is about to run |
 | `porto audit -v` | show the same report with every changed path, and not the first 5 of a bucket |
-| `porto audit <package>` | show the content hash, the count of files, the size and the reviewable delta in buckets, with the source of each change; `--from` names the version to compare from |
+| `porto audit <package>` | show the content hash, the count of files, the size and the reviewable delta in buckets, with the source of each change; `--from` names the version to compare from, and `--bucket` holds the delta to one bucket |
 | `porto audit <package> -v` | show the same report with every changed path, and not the first 5 of a bucket |
 | `porto preview` | show what the next `composer update` changes, with the reviewable delta of each package and the source of each change, before `vendor/` is touched |
 | `porto preview -v` | show the same report with every changed path, and not the first 5 of a bucket |
 | `porto trust` | trust each package that `porto audit` reports, at the tree on disk and at the tree of each pending install, and make the ledger |
 | `porto trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `porto.json` |
 
-`porto` with no argument runs `porto audit`.
+`porto` with no argument runs `porto audit`. `porto audit` and `porto preview` write the same report as JSON with the `--json` option.
 
 <a name="the-ledger"></a>
 ## The Ledger

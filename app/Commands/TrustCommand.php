@@ -6,11 +6,11 @@ namespace App\Commands;
 
 use App\Delta\Delta;
 use App\Delta\DeltaResolver;
-use App\Exceptions\Failure;
+use App\Enums\AuditStatus;
+use App\Exceptions\FailureException;
 use App\Exceptions\PortoException;
 use App\Identity\TreeHash;
 use App\Ledger\Auditor;
-use App\Ledger\AuditStatus;
 use App\Ledger\Grant;
 use App\Ledger\PackageAudit;
 use App\Lock\Project;
@@ -35,8 +35,11 @@ final class TrustCommand extends Command
 
     public function handle(): int
     {
+        $path = $this->option('path');
+        assert($path === null || is_string($path));
+
         try {
-            $project = Project::locate($this->stringOption('path') ?? (string) getcwd());
+            $project = Project::locate($path ?? (string) getcwd());
             $auditor = Auditor::forProject($project);
         } catch (PortoException $portoException) {
             $this->components->error($portoException->getMessage());
@@ -53,7 +56,7 @@ final class TrustCommand extends Command
 
     private function trustProject(Project $project, Auditor $auditor): int
     {
-        if ($this->stringOption('from') !== null) {
+        if ($this->option('from') !== null) {
             $this->components->error('The --from option needs one package. Run `porto trust <package>`.');
 
             return self::FAILURE;
@@ -145,7 +148,7 @@ final class TrustCommand extends Command
      */
     private function trustPackages(Project $project, Auditor $auditor, array $names): int
     {
-        if (count($names) > 1 && $this->stringOption('from') !== null) {
+        if (count($names) > 1 && $this->option('from') !== null) {
             $this->components->error('The --from option needs one package. Run `porto trust <package> --from=<version>`.');
 
             return self::FAILURE;
@@ -232,15 +235,18 @@ final class TrustCommand extends Command
     private function grantOf(PackageAudit $audit): Grant
     {
         if (! $audit->hash instanceof TreeHash) {
-            throw new Failure(sprintf('The bytes of [%s] were never read.', $audit->package));
+            throw new FailureException(sprintf('The bytes of [%s] were never read.', $audit->package));
         }
+
+        $notes = $this->option('notes');
+        assert($notes === null || is_string($notes));
 
         return new Grant(
             package: $audit->package,
             version: $audit->version,
             hash: $audit->hash,
             dev: $audit->dev,
-            notes: $this->stringOption('notes') ?? $audit->grant?->notes,
+            notes: $notes ?? $audit->grant?->notes,
         );
     }
 
@@ -260,7 +266,8 @@ final class TrustCommand extends Command
 
     private function delta(Auditor $auditor, Project $project, PackageAudit $audit): ?Delta
     {
-        $from = $this->stringOption('from');
+        $from = $this->option('from');
+        assert($from === null || is_string($from));
 
         if ($audit->pending() && $from === null) {
             return $this->incomingDelta($project, $auditor, $audit);
@@ -350,12 +357,5 @@ final class TrustCommand extends Command
     private function relative(string $root, string $path): string
     {
         return str_starts_with($path, $root.'/') ? mb_substr($path, mb_strlen($root) + 1) : $path;
-    }
-
-    private function stringOption(string $name): ?string
-    {
-        $value = $this->option($name);
-
-        return is_string($value) && $value !== '' ? $value : null;
     }
 }

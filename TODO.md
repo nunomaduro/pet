@@ -1,7 +1,8 @@
 - Review every single decision (options, API, etc)
-- Rewrite readme
-- Review test suite (smoke, snapshotting, etc)
-- Expand / Improve test suite, fixtures projects
 - Review every single line of code / refactoring
+  - Review the delta part, identity and ledger.
+- Rewrite readme
+- Expand / Improve test suite, fixtures projects
+
 - Rewrite readme again
 - Marketing: videos, artwork

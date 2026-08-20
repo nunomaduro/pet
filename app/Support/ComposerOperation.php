@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Enums\ComposerChangeType;
+
 final readonly class ComposerOperation
 {
     private const string LINE = '/^\s*-\s+(Installing|Upgrading|Downgrading|Removing)\s+([^\s\/]+\/[^\s\/]+)\s+\(([^)]+)\)/';
 
     public function __construct(
-        public string $package,
-        public ComposerChange $change,
-        public ?string $from,
-        public ?string $to,
-        public ?string $distUrl = null,
-        public ?string $distReference = null,
+        public string             $package,
+        public ComposerChangeType $change,
+        public ?string            $from,
+        public ?string            $to,
+        public ?string            $distUrl = null,
+        public ?string            $distReference = null,
     ) {}
 
     public static function parse(string $line): ?self
@@ -23,14 +25,14 @@ final readonly class ComposerOperation
             return null;
         }
 
-        $change = ComposerChange::fromVerb($matches[1]);
+        $change = ComposerChangeType::fromVerb($matches[1]);
         $versions = array_map(self::version(...), explode('=>', $matches[3]));
 
         if (count($versions) > 1) {
             return new self($matches[2], $change, $versions[0], $versions[1]);
         }
 
-        return $change === ComposerChange::Remove
+        return $change === ComposerChangeType::Remove
             ? new self($matches[2], $change, $versions[0], null)
             : new self($matches[2], $change, null, $versions[0]);
     }
@@ -41,9 +43,9 @@ final readonly class ComposerOperation
     public static function fromArray(array $entry): ?self
     {
         $package = Json::string($entry, 'package');
-        $change = ComposerChange::tryFrom(Json::string($entry, 'change') ?? '');
+        $change = ComposerChangeType::tryFrom(Json::string($entry, 'change') ?? '');
 
-        if ($package === null || $package === '' || ! $change instanceof ComposerChange) {
+        if ($package === null || $package === '' || ! $change instanceof ComposerChangeType) {
             return null;
         }
 

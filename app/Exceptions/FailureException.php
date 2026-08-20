@@ -4,4 +4,4 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-final class Failure extends PortoException {}
+final class FailureException extends PortoException {}

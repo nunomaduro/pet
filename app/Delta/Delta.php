@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Delta;
 
-use App\Identity\InstallSource;
+use App\Enums\BucketType;
+use App\Enums\InstallSourceType;
 use App\Identity\TreeHash;
 
 final readonly class Delta
@@ -14,16 +15,16 @@ final readonly class Delta
      * @param  array<int, string>  $notes  caveats about what was actually compared
      */
     public function __construct(
-        public string $package,
-        public string $from,
-        public string $to,
-        public TreeHash $fromHash,
-        public TreeHash $toHash,
-        public InstallSource $source,
-        private array $changes,
-        public ?ManifestChange $manifestChange,
-        public bool $toIsLocalInstall = false,
-        public array $notes = [],
+        public string            $package,
+        public string            $from,
+        public string            $to,
+        public TreeHash          $fromHash,
+        public TreeHash          $toHash,
+        public InstallSourceType $source,
+        private array            $changes,
+        public ?ManifestChange   $manifestChange,
+        public bool              $toIsLocalInstall = false,
+        public array             $notes = [],
     ) {}
 
     /**
@@ -60,7 +61,7 @@ final readonly class Delta
     /**
      * @return array<int, Change>
      */
-    public function inBucket(Bucket $bucket): array
+    public function inBucket(BucketType $bucket): array
     {
         return array_values(array_filter(
             $this->changes(),
@@ -75,7 +76,7 @@ final readonly class Delta
     {
         $counts = [];
 
-        foreach (Bucket::inReviewOrder() as $bucket) {
+        foreach (BucketType::inReviewOrder() as $bucket) {
             $counts[$bucket->value] = count($this->inBucket($bucket));
         }
 
@@ -89,13 +90,13 @@ final readonly class Delta
 
     public function hasOpaqueChanges(): bool
     {
-        return $this->inBucket(Bucket::Opaque) !== [];
+        return $this->inBucket(BucketType::Opaque) !== [];
     }
 
     public function isInertOnly(): bool
     {
         foreach ($this->changes as $change) {
-            if ($change->bucket !== Bucket::Inert) {
+            if ($change->bucket !== BucketType::Inert) {
                 return false;
             }
         }
@@ -110,7 +111,7 @@ final readonly class Delta
         }
 
         foreach ($this->changes as $change) {
-            if ($change->bucket === Bucket::Opaque || $change->bucket === Bucket::RuntimeSource) {
+            if ($change->bucket === BucketType::Opaque || $change->bucket === BucketType::RuntimeSource) {
                 return false;
             }
         }
@@ -125,7 +126,7 @@ final readonly class Delta
     {
         $blockers = [];
 
-        $opaque = $this->inBucket(Bucket::Opaque);
+        $opaque = $this->inBucket(BucketType::Opaque);
 
         if ($opaque !== []) {
             $blockers[] = sprintf(

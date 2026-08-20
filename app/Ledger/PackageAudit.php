@@ -4,25 +4,27 @@ declare(strict_types=1);
 
 namespace App\Ledger;
 
-use App\Identity\InstallSource;
+use App\Enums\AuditStatus;
+use App\Enums\InstallSourceType;
+use App\Enums\PackageStatus;
 use App\Identity\TreeHash;
 
 final readonly class PackageAudit
 {
     public function __construct(
-        public string $package,
-        public string $version,
-        public ?TreeHash $hash,
-        public bool $dev,
-        public AuditStatus $status,
-        public int $files,
-        public int $bytes,
-        public ?Grant $grant = null,
-        public InstallSource $source = InstallSource::Dist,
-        public PackageState $state = PackageState::Installed,
-        public ?string $from = null,
-        public ?string $cause = null,
-        public ?string $path = null,
+        public string            $package,
+        public string            $version,
+        public ?TreeHash         $hash,
+        public bool              $dev,
+        public AuditStatus       $status,
+        public int               $files,
+        public int               $bytes,
+        public ?Grant            $grant = null,
+        public InstallSourceType $source = InstallSourceType::Dist,
+        public PackageStatus     $state = PackageStatus::Installed,
+        public ?string           $from = null,
+        public ?string           $cause = null,
+        public ?string           $path = null,
     ) {}
 
     public function fails(): bool
@@ -32,7 +34,7 @@ final readonly class PackageAudit
 
     public function pending(): bool
     {
-        return $this->state === PackageState::Pending;
+        return $this->state === PackageStatus::Pending;
     }
 
     public function versions(): string
@@ -85,7 +87,7 @@ final readonly class PackageAudit
             $this->grant->hash->short(),
         );
 
-        if ($this->source === InstallSource::Source) {
+        if ($this->source === InstallSourceType::Source) {
             $reason .= '; this tree came from --prefer-source';
         }
 

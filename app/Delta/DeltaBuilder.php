@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Delta;
 
-use App\Identity\InstallSource;
+use App\Enums\ChangeStatus;
+use App\Enums\InstallSourceType;
 use App\Identity\Manifest;
 use App\Lock\Package;
 use App\Support\Json;
@@ -12,14 +13,14 @@ use App\Support\Json;
 final class DeltaBuilder
 {
     public function build(
-        string $package,
-        string $fromVersion,
-        string $fromDirectory,
-        Package $fromMetadata,
-        string $toVersion,
-        string $toDirectory,
-        Package $toMetadata,
-        InstallSource $source,
+        string            $package,
+        string            $fromVersion,
+        string            $fromDirectory,
+        Package           $fromMetadata,
+        string            $toVersion,
+        string            $toDirectory,
+        Package           $toMetadata,
+        InstallSourceType $source,
     ): Delta {
         $before = Manifest::ofDirectory($fromDirectory);
         $after = Manifest::ofDirectory($toDirectory);

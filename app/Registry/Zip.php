@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Registry;
 
-use App\Exceptions\Failure;
+use App\Exceptions\FailureException;
 use App\Support\Path;
 use ZipArchive;
 
@@ -16,14 +16,14 @@ final class Zip
     public static function extract(string $archive, string $destination): int
     {
         if (! class_exists(ZipArchive::class)) {
-            throw new Failure('The zip extension is required to read package archives.');
+            throw new FailureException('The zip extension is required to read package archives.');
         }
 
         $zip = new ZipArchive;
         $opened = $zip->open($archive);
 
         if ($opened !== true) {
-            throw new Failure(sprintf('Could not open the archive [%s] (zip error %d).', $archive, (int) $opened));
+            throw new FailureException(sprintf('Could not open the archive [%s] (zip error %d).', $archive, (int) $opened));
         }
 
         try {
@@ -38,7 +38,7 @@ final class Zip
             }
 
             if ($names === []) {
-                throw new Failure(sprintf('The archive [%s] is empty.', $archive));
+                throw new FailureException(sprintf('The archive [%s] is empty.', $archive));
             }
 
             $prefix = self::commonRoot($names);
@@ -56,13 +56,13 @@ final class Zip
                 $directory = dirname($target);
 
                 if (! is_dir($directory) && ! @mkdir($directory, 0o777, true) && ! is_dir($directory)) {
-                    throw new Failure(sprintf('Could not create the directory [%s].', $directory));
+                    throw new FailureException(sprintf('Could not create the directory [%s].', $directory));
                 }
 
                 $stream = $zip->getStream($name);
 
                 if ($stream === false) {
-                    throw new Failure(sprintf('Could not read [%s] from the archive [%s].', $name, $archive));
+                    throw new FailureException(sprintf('Could not read [%s] from the archive [%s].', $name, $archive));
                 }
 
                 $handle = @fopen($target, 'wb');
@@ -70,7 +70,7 @@ final class Zip
                 if ($handle === false) {
                     fclose($stream);
 
-                    throw new Failure(sprintf('Could not write to [%s].', $target));
+                    throw new FailureException(sprintf('Could not write to [%s].', $target));
                 }
 
                 stream_copy_to_stream($stream, $handle);
@@ -81,7 +81,7 @@ final class Zip
             }
 
             if ($written === 0) {
-                throw new Failure(sprintf('The archive [%s] contained no files.', $archive));
+                throw new FailureException(sprintf('The archive [%s] contained no files.', $archive));
             }
 
             return $written;
@@ -121,12 +121,12 @@ final class Zip
         $relative = Path::toRelativeForm($relative);
 
         if ($relative === '' || str_starts_with($relative, '/') || preg_match('#^[a-zA-Z]:#', $relative) === 1) {
-            throw new Failure(sprintf('The archive [%s] contains an absolute path [%s].', $archive, $relative));
+            throw new FailureException(sprintf('The archive [%s] contains an absolute path [%s].', $archive, $relative));
         }
 
         foreach (explode('/', $relative) as $segment) {
             if ($segment === '..') {
-                throw new Failure(sprintf('The archive [%s] contains a traversing path [%s].', $archive, $relative));
+                throw new FailureException(sprintf('The archive [%s] contains a traversing path [%s].', $archive, $relative));
             }
         }
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Delta;
 
-use App\Exceptions\Failure;
-use App\Identity\InstallSource;
+use App\Enums\InstallSourceType;
+use App\Exceptions\FailureException;
 use App\Lock\InstalledRepository;
 use App\Lock\Package;
 use App\Lock\Project;
@@ -48,7 +48,7 @@ final readonly class DeltaResolver
         $toVersion = $to ?? $installed->version ?? array_key_first($versions);
 
         if (! is_string($toVersion)) {
-            throw new Failure(sprintf('Could not determine which version of [%s] to compare to.', $package));
+            throw new FailureException(sprintf('Could not determine which version of [%s] to compare to.', $package));
         }
 
         $toMetadata = $this->packagist->version($package, $toVersion);
@@ -57,7 +57,7 @@ final readonly class DeltaResolver
         $fromVersion = $from ?? $this->packagist->previousVersion($package, $toVersion);
 
         if ($fromVersion === null) {
-            throw new Failure(sprintf(
+            throw new FailureException(sprintf(
                 '[%s@%s] has no earlier release to compare against. Pass an explicit version: `porto audit %s <from>`.',
                 $package,
                 $toVersion,
@@ -69,7 +69,7 @@ final readonly class DeltaResolver
         $fromVersion = $fromMetadata->version;
 
         if ($fromVersion === $toVersion) {
-            throw new Failure(sprintf('[%s] %s and %s are the same version.', $package, $fromVersion, $toVersion));
+            throw new FailureException(sprintf('[%s] %s and %s are the same version.', $package, $fromVersion, $toVersion));
         }
 
         $notes = [];
@@ -103,7 +103,7 @@ final readonly class DeltaResolver
             toVersion: $target->version,
             toDirectory: $this->fetcher->fetch($target, $useCache),
             toMetadata: $target,
-            source: $installed->installSource ?? InstallSource::Dist,
+            source: $installed->installSource ?? InstallSourceType::Dist,
         );
 
         return $delta->withResolution(false, []);
@@ -111,7 +111,7 @@ final readonly class DeltaResolver
 
     /**
      * @param  array<int, string>  $notes
-     * @return array{0: string, 1: bool, 2: InstallSource}
+     * @return array{0: string, 1: bool, 2: InstallSourceType}
      */
     private function toTree(
         ?Package $installed,
@@ -127,24 +127,24 @@ final readonly class DeltaResolver
             && is_dir($installed->installPath);
 
         if (! $usable) {
-            return [$this->fetcher->fetch($toMetadata, $useCache), false, InstallSource::Dist];
+            return [$this->fetcher->fetch($toMetadata, $useCache), false, InstallSourceType::Dist];
         }
 
         /** @var Package $installed */
-        $source = $installed->installSource ?? InstallSource::Dist;
+        $source = $installed->installSource ?? InstallSourceType::Dist;
 
-        if ($source === InstallSource::Source) {
+        if ($source === InstallSourceType::Source) {
             $notes[] = sprintf(
                 '%s is installed from source; comparing dist archives instead. An audit of this delta does not cover your source install.',
                 $installed->name,
             );
 
-            return [$this->fetcher->fetch($toMetadata, $useCache), false, InstallSource::Source];
+            return [$this->fetcher->fetch($toMetadata, $useCache), false, InstallSourceType::Source];
         }
 
         /** @var string $path */
         $path = $installed->installPath;
 
-        return [$path, true, InstallSource::Dist];
+        return [$path, true, InstallSourceType::Dist];
     }
 }

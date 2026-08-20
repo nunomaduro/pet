@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use App\Exceptions\FetchFailed;
+use App\Exceptions\FetchFailedException;
 
 final readonly class Http
 {
@@ -27,7 +27,7 @@ final readonly class Http
             : $this->getWithStreams($url);
 
         if (trim($body) === '') {
-            throw FetchFailed::empty($url);
+            throw FetchFailedException::empty($url);
         }
 
         return $body;
@@ -38,7 +38,7 @@ final readonly class Http
         $directory = dirname($destination);
 
         if (! is_dir($directory) && ! @mkdir($directory, 0o777, true) && ! is_dir($directory)) {
-            throw FetchFailed::transport($url, sprintf('could not create the directory [%s].', $directory));
+            throw FetchFailedException::transport($url, sprintf('could not create the directory [%s].', $directory));
         }
 
         $temporary = $destination.'.'.bin2hex(random_bytes(6)).'.part';
@@ -47,15 +47,15 @@ final readonly class Http
             $body = $this->get($url);
 
             if (file_put_contents($temporary, $body) === false) {
-                throw FetchFailed::transport($url, sprintf('could not write to [%s].', $temporary));
+                throw FetchFailedException::transport($url, sprintf('could not write to [%s].', $temporary));
             }
 
             if ((int) filesize($temporary) === 0) {
-                throw FetchFailed::empty($url);
+                throw FetchFailedException::empty($url);
             }
 
             if (! rename($temporary, $destination)) {
-                throw FetchFailed::transport($url, sprintf('could not move the download into [%s].', $destination));
+                throw FetchFailedException::transport($url, sprintf('could not move the download into [%s].', $destination));
             }
         } finally {
             if (is_file($temporary)) {
@@ -151,7 +151,7 @@ final readonly class Http
         $handle = curl_init($url);
 
         if ($handle === false) {
-            throw FetchFailed::transport($url, 'could not initialise curl.');
+            throw FetchFailedException::transport($url, 'could not initialise curl.');
         }
 
         curl_setopt_array($handle, [
@@ -171,11 +171,11 @@ final readonly class Http
         curl_close($handle);
 
         if ($body === false || $error !== '') {
-            throw FetchFailed::transport($url, $error === '' ? 'the transfer failed.' : $error);
+            throw FetchFailedException::transport($url, $error === '' ? 'the transfer failed.' : $error);
         }
 
         if ($status < 200 || $status >= 300) {
-            throw FetchFailed::status($url, $status, is_string($body) ? $body : '');
+            throw FetchFailedException::status($url, $status, is_string($body) ? $body : '');
         }
 
         return (string) $body;
@@ -207,11 +207,11 @@ final readonly class Http
         }
 
         if ($body === false) {
-            throw FetchFailed::transport($url, 'the transfer failed.');
+            throw FetchFailedException::transport($url, 'the transfer failed.');
         }
 
         if ($status < 200 || $status >= 300) {
-            throw FetchFailed::status($url, $status, $body);
+            throw FetchFailedException::status($url, $status, $body);
         }
 
         return $body;

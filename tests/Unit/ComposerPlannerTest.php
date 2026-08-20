@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Exceptions\ComposerFailed;
+use App\Exceptions\ComposerFailedException;
 use App\Support\ComposerPlanner;
 
 it('fails when composer is not on the path', function (): void {
     (new ComposerPlanner('composer-that-is-not-installed'))->plan(__DIR__);
-})->throws(ComposerFailed::class, 'Could not find [composer-that-is-not-installed] on your PATH.');
+})->throws(ComposerFailedException::class, 'Could not find [composer-that-is-not-installed] on your PATH.');
 
 it('reads the plan of the composer binary', function (): void {
     $planner = new ComposerPlanner(stubBinary(
@@ -24,11 +24,11 @@ it('names the words of composer when the plan fails', function (): void {
 
     try {
         $planner->plan(__DIR__);
-    } catch (ComposerFailed $composerFailed) {
-        $failure = $composerFailed;
+    } catch (ComposerFailedException $composerFailedException) {
+        $failure = $composerFailedException;
     }
 
-    expect($failure)->toBeInstanceOf(ComposerFailed::class)
+    expect($failure)->toBeInstanceOf(ComposerFailedException::class)
         ->and($failure?->getMessage())->toContain('exit code 2')
         ->and($failure?->output)->toBe(['Your requirements could not be resolved.']);
 });

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Identity;
 
-use App\Exceptions\Failure;
+use App\Exceptions\FailureException;
 use Stringable;
 
 final readonly class TreeHash implements Stringable
@@ -36,17 +36,17 @@ final readonly class TreeHash implements Stringable
         $parts = explode(':', $value, 2);
 
         if (count($parts) !== 2) {
-            throw new Failure(sprintf('Malformed tree hash [%s]: expected "<algorithm>:<digest>".', $value));
+            throw new FailureException(sprintf('Malformed tree hash [%s]: expected "<algorithm>:<digest>".', $value));
         }
 
         [$algorithm, $digest] = $parts;
 
         if ($algorithm !== self::ALGORITHM) {
-            throw new Failure(sprintf('Unknown tree hash algorithm [%s]; this build of porto understands [%s].', $algorithm, self::ALGORITHM));
+            throw new FailureException(sprintf('Unknown tree hash algorithm [%s]; this build of porto understands [%s].', $algorithm, self::ALGORITHM));
         }
 
         if (preg_match('/^[0-9a-f]{'.self::LENGTH.'}$/', $digest) !== 1) {
-            throw new Failure(sprintf('Malformed tree hash digest [%s]: expected %d lowercase hex characters.', $digest, self::LENGTH));
+            throw new FailureException(sprintf('Malformed tree hash digest [%s]: expected %d lowercase hex characters.', $digest, self::LENGTH));
         }
 
         return new self($algorithm, $digest);

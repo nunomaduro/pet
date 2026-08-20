@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Ledger;
 
+use App\Enums\AuditStatus;
+use App\Enums\PackageStatus;
 use App\Exceptions\PortoException;
 use App\Identity\Fingerprint;
 use App\Identity\Fingerprinter;
@@ -129,7 +131,7 @@ final readonly class Auditor
                 files: 0,
                 bytes: 0,
                 grant: $grant,
-                state: PackageState::Pending,
+                state: PackageStatus::Pending,
                 from: $operation->from,
                 cause: sprintf(
                     'composer would install %s and porto cannot read those bytes: %s',
@@ -149,7 +151,7 @@ final readonly class Auditor
             bytes: $fingerprint->bytes,
             grant: $grant,
             source: $fingerprint->source,
-            state: PackageState::Pending,
+            state: PackageStatus::Pending,
             from: $operation->from,
             path: $fingerprint->path,
         );

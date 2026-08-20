@@ -2,7 +2,7 @@
 
 `porto` is a dependency audit ledger for PHP. `porto` records the bytes of each installed package that the user trusts, shows the reviewable delta between the version that the user trusted and the version that the user installed, and exits non-zero when a package in `composer.lock` is ungranted or when its bytes changed. Two users read the output: a PHP developer who reviews the dependencies of a project, and the CI job of that project.
 
-Install the dependencies with `composer install`. Run the tests with `composer test`. Run the program with `./porto`.
+Install the dependencies with `composer install`. Run the program with `./porto`. Run the tests with `composer test` after the user approves the implementation, and see section 4.
 
 `porto` is a [Laravel Zero](https://laravel-zero.com) application. `App\Commands\AuditCommand` is the default command in `config/commands.php`, thus `./porto` with no argument shows what is unaudited.
 
@@ -15,6 +15,7 @@ Install the dependencies with `composer install`. Run the tests with `composer t
 | `app/Registry` | the metadata of Packagist, the fetch of an archive and the extraction of an archive |
 | `app/Delta` | the difference between two trees, the classifier of a change and the unified diff |
 | `app/Ledger` | the read of `porto.json`, the write of `porto.json`, the entry and the audit decision |
+| `app/Enums` | the enumerations of the audit engine |
 | `app/Exceptions` | the exceptions of the audit engine |
 | `app/Support` | the cache, the HTTP client, the JSON codec, the paths, the version constraints and the helpers of a command |
 | `bootstrap` and `config` | the configuration of Laravel Zero |
@@ -75,7 +76,7 @@ When a library reads the text of a comment as data, such as the description of a
 
 A tool that writes a comment into a file that it owns keeps that comment. Do not delete it: the tool fails until it writes the comment again.
 
-Put each class under `app/` in the `App\` namespace. Use Laravel Zero, Illuminate and Symfony in `app/Commands`, `app/Providers` and `app/Support` only. Each other namespace under `App\` is the audit engine and uses the audit engine alone. When you add a namespace to the engine, add its name to the `$core` list in `tests/Arch.php`, because the test reads that list and does not find the namespace without it.
+Put each class under `app/` in the `App\` namespace. Put each enum under `app/Enums` in the `App\Enums` namespace, and declare an enum in no other namespace. Use Laravel Zero, Illuminate and Symfony in `app/Commands`, `app/Providers` and `app/Support` only. Each other namespace under `App\` is the audit engine and uses the audit engine alone. When you add a namespace to the engine, add its name to the `$core` list in `tests/Arch.php`, because the test reads that list and does not find the namespace without it.
 
 Give a helper under `app/Support` the output of the command and let it build its own components: `$this->components` is protected on `Illuminate\Console\Concerns\InteractsWithIO`, thus a helper cannot read it. `App\Support\DeltaRenderer` takes an `Illuminate\Console\OutputStyle` and makes an `App\Support\ControlSafeComponents` of it.
 
@@ -95,19 +96,21 @@ Add the path to the `export-ignore` list of `.gitattributes` when you add a file
 
 Give `app/Composer` no dependency on a different namespace under `App\`. Composer reads `extra.class` of `composer.json` and fails the install when `App\Composer\Plugin` is absent, and the dist holds `app/Composer` alone. `App\Composer\Gate` owns the constant `ENVIRONMENT` for this reason, and `App\Support\Invitation` reads that constant from `Gate`.
 
-Build the PHAR again with `php porto app:build` after you change a file under `app/`, `bootstrap/` or `config/`, and commit `builds/porto`. The dist holds the PHAR and holds no source of the application, thus a release of an old PHAR ships the code of the previous version.
+Run no `php porto app:build`, and build no PHAR. The user builds the PHAR and commits `builds/porto`. Tell the user to build after you change a file under `app/`, `bootstrap/` or `config/`, because the dist holds the PHAR and holds no source of the application, thus a release of an old PHAR ships the code of the previous version.
 
-Keep `exclude-dev-files` false in `box.json`. `laravel-zero/framework` is in `require-dev`, thus Box dumps an autoloader that holds no framework when that option is true, and the PHAR stops with `Class "LaravelZero\Framework\Application" not found`. Run `./builds/porto audit` after each build, with PHP 8.3, with PHP 8.4 and with PHP 8.5: the three runs print one report.
+Keep `exclude-dev-files` false in `box.json`. `laravel-zero/framework` is in `require-dev`, thus Box dumps an autoloader that holds no framework when that option is true, and the PHAR stops with `Class "LaravelZero\Framework\Application" not found`. The user runs `./builds/porto audit` after each build, with PHP 8.3, with PHP 8.4 and with PHP 8.5: the three runs print one report.
 
-Declare `abstract` on a class that a different class extends, because `pint.json` sets `final_class` and thus makes each other class final. `app/Exceptions/PortoException.php` is abstract for this reason. To signal an error that has no dedicated class, throw `App\Exceptions\Failure`.
+Name each class under `app/Exceptions` with the suffix `Exception`, and give that suffix to no other class.
 
-Treat each failure of a fetch as fatal. When a body is empty, or a call returns `false`, throw `App\Exceptions\FetchFailed`. An error must never look like a result that holds no change. A delta that the user did not ask for is the one exception: `porto audit <package>` warns and keeps the local report when it cannot fetch the delta of the granted version, and fails when the user names a version with `--from` and the fetch fails.
+Declare `abstract` on a class that a different class extends, because `pint.json` sets `final_class` and thus makes each other class final. `app/Exceptions/PortoException.php` is abstract for this reason. To signal an error that has no dedicated class, throw `App\Exceptions\FailureException`.
+
+Treat each failure of a fetch as fatal. When a body is empty, or a call returns `false`, throw `App\Exceptions\FetchFailedException`. An error must never look like a result that holds no change. A delta that the user did not ask for is the one exception: `porto audit <package>` warns and keeps the local report when it cannot fetch the delta of the granted version, and fails when the user names a version with `--from` and the fetch fails.
 
 Ask no question, in any command. The user records a grant with `porto trust`, thus a question asks the user to say the same thing two times, and a question that reads no terminal answers itself with its own default.
 
 Grant no permission, and add no scan that reads the code of a package. The user trusts the bytes of a package or the user does not trust them, and a list of permissions asks the user to make a second decision that `porto` cannot prove. Report a fact of the tree instead: the hash, the count of files, the bytes, the changed paths and the source of each change.
 
-Run `composer test` after you change a file of source code. The command runs `rector process --dry-run`, `pint --test`, `./porto audit`, `phpstan analyse` and `pest --parallel`. The workflow `.github/workflows/tests.yml` runs the same steps on PHP 8.3, PHP 8.4 and PHP 8.5.
+Stop after you change a file of source code, name each file that you changed, and ask the user if the implementation is correct. Run `composer test` after the user answers yes, and run no test and no part of a test before that answer. When the user answers no, change the code and ask again. The command runs `rector process --dry-run`, `pint --test`, `./porto audit`, `phpstan analyse` and `pest --parallel`. The workflow `.github/workflows/tests.yml` runs the same steps on PHP 8.3, PHP 8.4 and PHP 8.5.
 
 Install the dependencies of CI with `composer install`, and run no `composer update` in a job. `composer test` runs the gate `./porto audit`, thus a job that resolves a different tree reports a package that `porto.json` does not cover and fails on a change that the commit does not hold.
 
@@ -117,16 +120,18 @@ Install the dependencies of CI with `composer install`, and run no `composer upd
 
 | Command | Function |
 |---|---|
-| `porto audit` | show what is unaudited, worst first, with the count of files that each review costs, and exit non-zero when a package is ungranted, when its bytes changed, or when `vendor/` disagrees with `composer.lock`; `--plan` names the operations that composer is about to run |
-| `porto audit <package>` | show the content hash, the count of files, the bytes and the reviewable delta in buckets; `--from` names the version to compare from |
-| `porto audit <package> -v` | show the same report with the source of each change |
-| `porto preview` | show what the next `composer update` changes, from `composer update --dry-run`, and exit 0 |
-| `porto trust` | trust each package that `porto audit` reports, at the bytes on disk and at the bytes of each pending install, and make the ledger |
+| `porto audit` | show what is unaudited, worst first, with the reviewable delta of each package, the source of each change and the count of files that each review costs, and exit non-zero when a package is ungranted, when its contents changed, or when `vendor/` disagrees with `composer.lock`; `--plan` names the operations that Composer is about to run |
+| `porto audit -v` | show the same report with every changed path, and not the first 5 of a bucket |
+| `porto audit <package>` | show the content hash, the count of files, the size and the reviewable delta in buckets, with the source of each change; `--from` names the version to compare from, and `--bucket` holds the delta to one bucket |
+| `porto audit <package> -v` | show the same report with every changed path, and not the first 5 of a bucket |
+| `porto preview` | show what the next `composer update` changes, with the reviewable delta of each package and the source of each change, before `vendor/` is touched |
+| `porto preview -v` | show the same report with every changed path, and not the first 5 of a bucket |
+| `porto trust` | trust each package that `porto audit` reports, at the tree on disk and at the tree of each pending install, and make the ledger |
 | `porto trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `porto.json` |
 
-`porto` with no argument runs `porto audit`.
+`porto` with no argument runs `porto audit`. `porto audit` and `porto preview` write the same report as JSON with the `--json` option.
 
-Audit two subjects in each command: the tree that `vendor/` holds, and the tree that composer is about to write. A package that `composer.lock` names and `vendor/` holds at that version is `installed`, and `App\Ledger\Auditor` hashes the bytes on disk. A package that `composer.lock` names at a version that `vendor/` does not hold is `pending`, and the auditor fetches the dist archive of that version and hashes it. `App\Ledger\PackageState` holds the two cases.
+Audit two subjects in each command: the tree that `vendor/` holds, and the tree that composer is about to write. A package that `composer.lock` names and `vendor/` holds at that version is `installed`, and `App\Ledger\Auditor` hashes the bytes on disk. A package that `composer.lock` names at a version that `vendor/` does not hold is `pending`, and the auditor fetches the dist archive of that version and hashes it. `App\Enums\PackageStatus` holds the two cases.
 
 Read the operations of composer from the `--plan` file when the plugin gives one, and derive them from `composer.lock` against `vendor/composer/installed.json` in each other run. `App\Support\ComposerPlan::fromFile()` reads the file and `ComposerPlan::between()` derives them. `ComposerPlan::explains()` separates the two: a plan that composer wrote explains why `vendor/` disagrees with the lock file, thus `lockDiscrepancies()` reports no disagreement for a package that such a plan names. A plan that porto derived explains nothing, thus the disagreement stays an error and a job of CI that never ran `composer install` still fails.
 
@@ -138,7 +143,7 @@ Compare a pending tree against the tree in `vendor/`, and reach no network for t
 
 Show the delta of `porto audit <package>` from the `--from` option when the user gives one, and from the version in `porto.json` when that version is not the installed version. Fetch nothing in each other case, thus the report of a covered package stays local and instant.
 
-Print the source of each change with `-v`, in `porto audit <package>` and in `porto trust <package>`. The report of each command names the count of changes and invites `-v` when the user gives no `-v`, thus one command holds the review and no command points at a second command.
+Print the source of each change in each report, and show the first 5 changed paths of each bucket. `-v` shows each changed path of each bucket, thus one command holds the review and no command points at a second command. `App\Support\DeltaRenderer` counts the paths that it does not show and invites `-v`.
 
 Print the source of each change under the path of that change, and indent it. `App\Support\DeltaRenderer` owns that output, thus `porto audit` and `porto trust` print one format.
 
@@ -277,9 +282,9 @@ Read the full tree, and add no cache for speed. A hash of 6,953 files and 91.2 M
 
 Run `./porto audit symfony/console` two times, and compare the two hashes: the hashes are equal. Change one byte of a file of that package in `vendor/`: the hash changes.
 
-Run `./porto audit carbonphp/carbon-doctrine-types --from=3.1.0`: the report names the two changed paths, holds no source, and invites `-v`. Run the same command with `-v`: the report holds the two hunks, and each hunk is under the path of its file.
+Run `./porto audit carbonphp/carbon-doctrine-types --from=3.1.0`: the report names the two changed paths and holds the two hunks, and each hunk is under the path of its file.
 
-Run `./porto audit laravel/pint --from=v1.30.4 -v`: the report shows the PHAR as an opaque artifact, holds no diff of it, and warns that nobody reads those bytes.
+Run `./porto audit laravel/pint --from=v1.30.4 --bucket=opaque`: the report shows the PHAR as an opaque artifact, holds no diff of it, and warns that nobody reads those bytes.
 
 Delete `porto.json` and run `./porto trust`: the command lists each installed package with its status and the reason of that status, asks nothing, and writes the file. Run `./porto audit`: the command exits 0.
 
@@ -311,4 +316,4 @@ Do not add a web interface or a hosted service.
 
 Do not add `nikic/php-parser`. `porto` reads no PHP source, and a parser in the tree of a user makes a version conflict with Rector and with PHPStan.
 
-Ship no compiled binary. `porto` must run against itself, thus each artifact must stay readable: a PHAR of PHP source is extractable and diffable. Build the PHAR with `php porto app:build`, which reads `box.json`.
+Ship no compiled binary. `porto` must run against itself, thus each artifact must stay readable: a PHAR of PHP source is extractable and diffable. The PHAR comes from `php porto app:build`, which reads `box.json`, and section 4 says who runs that command.

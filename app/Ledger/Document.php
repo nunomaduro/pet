@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ledger;
 
-use App\Exceptions\Failure;
+use App\Exceptions\FailureException;
 use App\Lock\Project;
 use App\Support\Json;
 
@@ -42,7 +42,7 @@ final readonly class Document
         $schema = $data['schema'] ?? null;
 
         if ($schema === 1 || $schema === 2) {
-            throw new Failure(sprintf(
+            throw new FailureException(sprintf(
                 'The porto file [%s] declares schema %d, which recorded permissions. Schema %d records the version and the hash of each package that you trust. Delete the file and run `porto trust` again.',
                 $path,
                 $schema,
@@ -51,7 +51,7 @@ final readonly class Document
         }
 
         if ($schema !== self::SCHEMA) {
-            throw new Failure(sprintf(
+            throw new FailureException(sprintf(
                 'The porto file [%s] declares schema %s; this build of porto reads schema %d.',
                 $path,
                 is_scalar($schema) ? (string) $schema : 'none',
@@ -83,7 +83,7 @@ final readonly class Document
         $directory = dirname($this->path);
 
         if (! is_dir($directory) && ! @mkdir($directory, 0o777, true) && ! is_dir($directory)) {
-            throw new Failure(sprintf('Could not create the directory [%s].', $directory));
+            throw new FailureException(sprintf('Could not create the directory [%s].', $directory));
         }
 
         $merged = [...self::atPath($this->path)->data, ...$sections, 'schema' => self::SCHEMA];
@@ -103,7 +103,7 @@ final readonly class Document
         }
 
         if (@file_put_contents($this->path, Json::encode($ordered)) === false) {
-            throw new Failure(sprintf('Could not write the porto file to [%s].', $this->path));
+            throw new FailureException(sprintf('Could not write the porto file to [%s].', $this->path));
         }
     }
 }

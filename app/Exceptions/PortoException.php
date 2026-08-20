@@ -6,4 +6,7 @@ namespace App\Exceptions;
 
 use RuntimeException;
 
-abstract class PortoException extends RuntimeException {}
+abstract class PortoException extends RuntimeException
+{
+    //
+}
