@@ -48,6 +48,38 @@ it('reads the source of each change with -v, and never the source of an opaque a
         ->and(str_contains($output, 'OPAQUE BYTES'))->toBeFalse();
 });
 
+it('limits a preview to one bucket', function (): void {
+    $fixture = Fixture::open('pending-update');
+
+    try {
+        $status = Artisan::call('preview', ['--path' => $fixture->rootPath, '--bucket' => 'runtime-source']);
+        $output = Artisan::output();
+    } finally {
+        $fixture->remove();
+    }
+
+    expect($status)->toBe(0)
+        ->and($output)
+        ->toContain('runtime source (1)')
+        ->toContain('~ src/Widget.php')
+        ->and(str_contains($output, 'install-time manifest'))->toBeFalse()
+        ->and(str_contains($output, 'opaque artifact'))->toBeFalse();
+});
+
+it('rejects an unknown bucket name', function (): void {
+    $fixture = Fixture::open('pending-update');
+
+    try {
+        $status = Artisan::call('preview', ['--path' => $fixture->rootPath, '--bucket' => 'unknown']);
+        $output = Artisan::output();
+    } finally {
+        $fixture->remove();
+    }
+
+    expect($status)->toBe(1)
+        ->and($output)->toContain('The --bucket option accepts one of:');
+});
+
 it('emits the plan as json', function (): void {
     $fixture = Fixture::open('pending-update');
 
