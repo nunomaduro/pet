@@ -1,10 +1,10 @@
 # The project
 
-`pet` is a dependency audit ledger for PHP. `pet` records the bytes of each installed package that the user trusts, shows the reviewable delta between the version that the user trusted and the version that the user installed, and exits non-zero when a package in `composer.lock` is ungranted or when its bytes changed. Two users read the output: a PHP developer who reviews the dependencies of a project, and the CI job of that project.
+`porto` is a dependency audit ledger for PHP. `porto` records the bytes of each installed package that the user trusts, shows the reviewable delta between the version that the user trusted and the version that the user installed, and exits non-zero when a package in `composer.lock` is ungranted or when its bytes changed. Two users read the output: a PHP developer who reviews the dependencies of a project, and the CI job of that project.
 
-Install the dependencies with `composer install`. Run the tests with `composer test`. Run the program with `./pet`.
+Install the dependencies with `composer install`. Run the tests with `composer test`. Run the program with `./porto`.
 
-`pet` is a [Laravel Zero](https://laravel-zero.com) application. `App\Commands\AuditCommand` is the default command in `config/commands.php`, thus `./pet` with no argument shows what is unaudited.
+`porto` is a [Laravel Zero](https://laravel-zero.com) application. `App\Commands\AuditCommand` is the default command in `config/commands.php`, thus `./porto` with no argument shows what is unaudited.
 
 | Path | Function |
 |---|---|
@@ -14,14 +14,14 @@ Install the dependencies with `composer install`. Run the tests with `composer t
 | `app/Lock` | the readers of `composer.lock` and of `vendor/composer/installed.json` |
 | `app/Registry` | the metadata of Packagist, the fetch of an archive and the extraction of an archive |
 | `app/Delta` | the difference between two trees, the classifier of a change and the unified diff |
-| `app/Ledger` | the read of `pet.json`, the write of `pet.json`, the entry and the audit decision |
+| `app/Ledger` | the read of `porto.json`, the write of `porto.json`, the entry and the audit decision |
 | `app/Exceptions` | the exceptions of the audit engine |
 | `app/Support` | the cache, the HTTP client, the JSON codec, the paths, the version constraints and the helpers of a command |
 | `bootstrap` and `config` | the configuration of Laravel Zero |
 | `tests` | the tests, which Pest runs |
-| `pet.json` | the ledger of this project |
+| `porto.json` | the ledger of this project |
 
-Audit this project with `./pet`, and record the result in `pet.json`.
+Audit this project with `./porto`, and record the result in `porto.json`.
 
 ---
 
@@ -81,35 +81,35 @@ Give a helper under `app/Support` the output of the command and let it build its
 
 Print each text that a package holds through `App\Support\ControlSafe`, and make each components factory an `App\Support\ControlSafeComponents`. `App\Support\ControlSafeFormatter` cleans the text that `line()` and `writeln()` write, and a component reaches the formatter with its control characters already gone: Termwind parses the HTML of a component with `DOMDocument`, and libxml 2.9 deletes a control character that libxml 2.15 keeps.
 
-Keep `platform.php` at `8.3.0` in `config` of `composer.json`. `builds/pet` holds the tree that Composer resolved, thus a tree that Composer resolves against PHP 8.4 puts Symfony 8 in the PHAR and that PHAR stops on PHP 8.3 in `vendor/composer/platform_check.php`.
+Keep `platform.php` at `8.3.0` in `config` of `composer.json`. `builds/porto` holds the tree that Composer resolved, thus a tree that Composer resolves against PHP 8.4 puts Symfony 8 in the PHAR and that PHAR stops on PHP 8.3 in `vendor/composer/platform_check.php`.
 
 Add no package to `require-dev` that requires PHP 8.4 or higher, because the pin of `platform.php` rejects it. `pestphp/pest` stays at `^4.7.8` for this reason.
 
-Call `trim`, `ltrim` and `rtrim`, and call no `mb_trim`, `mb_ltrim` or `mb_rtrim`: PHP 8.4 added those three functions and `pet` runs on PHP 8.3. `pint.json` keeps `mb_str_functions` false, because that fixer writes them.
+Call `trim`, `ltrim` and `rtrim`, and call no `mb_trim`, `mb_ltrim` or `mb_rtrim`: PHP 8.4 added those three functions and `porto` runs on PHP 8.3. `pint.json` keeps `mb_str_functions` false, because that fixer writes them.
 
-Do not add an entry to `require` in `composer.json`. The audit engine uses the core of PHP alone, and `laravel-zero/framework` serves `app/Commands` and `app/Providers`. A new dependency also makes a version conflict when a user installs `pet` in the tree of a Laravel application.
+Do not add an entry to `require` in `composer.json`. The audit engine uses the core of PHP alone, and `laravel-zero/framework` serves `app/Commands` and `app/Providers`. A new dependency also makes a version conflict when a user installs `porto` in the tree of a Laravel application.
 
-Point `bin` of `composer.json` at `builds/pet`, and give the dist five files: `builds/pet`, `LICENSE.md`, `composer.json`, `app/Composer/Gate.php` and `app/Composer/Plugin.php`. `.gitattributes` sets `export-ignore` on each other path. Test the shape with `git archive --format=tar $(git write-tree) | tar -t`.
+Point `bin` of `composer.json` at `builds/porto`, and give the dist five files: `builds/porto`, `LICENSE.md`, `composer.json`, `app/Composer/Gate.php` and `app/Composer/Plugin.php`. `.gitattributes` sets `export-ignore` on each other path. Test the shape with `git archive --format=tar $(git write-tree) | tar -t`.
 
 Add the path to the `export-ignore` list of `.gitattributes` when you add a file or a directory at the root of the repository. A path that the list does not name goes into the dist of the next release.
 
 Give `app/Composer` no dependency on a different namespace under `App\`. Composer reads `extra.class` of `composer.json` and fails the install when `App\Composer\Plugin` is absent, and the dist holds `app/Composer` alone. `App\Composer\Gate` owns the constant `ENVIRONMENT` for this reason, and `App\Support\Invitation` reads that constant from `Gate`.
 
-Build the PHAR again with `php pet app:build` after you change a file under `app/`, `bootstrap/` or `config/`, and commit `builds/pet`. The dist holds the PHAR and holds no source of the application, thus a release of an old PHAR ships the code of the previous version.
+Build the PHAR again with `php porto app:build` after you change a file under `app/`, `bootstrap/` or `config/`, and commit `builds/porto`. The dist holds the PHAR and holds no source of the application, thus a release of an old PHAR ships the code of the previous version.
 
-Keep `exclude-dev-files` false in `box.json`. `laravel-zero/framework` is in `require-dev`, thus Box dumps an autoloader that holds no framework when that option is true, and the PHAR stops with `Class "LaravelZero\Framework\Application" not found`. Run `./builds/pet audit` after each build, with PHP 8.3, with PHP 8.4 and with PHP 8.5: the three runs print one report.
+Keep `exclude-dev-files` false in `box.json`. `laravel-zero/framework` is in `require-dev`, thus Box dumps an autoloader that holds no framework when that option is true, and the PHAR stops with `Class "LaravelZero\Framework\Application" not found`. Run `./builds/porto audit` after each build, with PHP 8.3, with PHP 8.4 and with PHP 8.5: the three runs print one report.
 
-Declare `abstract` on a class that a different class extends, because `pint.json` sets `final_class` and thus makes each other class final. `app/Exceptions/PetException.php` is abstract for this reason. To signal an error that has no dedicated class, throw `App\Exceptions\Failure`.
+Declare `abstract` on a class that a different class extends, because `pint.json` sets `final_class` and thus makes each other class final. `app/Exceptions/PortoException.php` is abstract for this reason. To signal an error that has no dedicated class, throw `App\Exceptions\Failure`.
 
-Treat each failure of a fetch as fatal. When a body is empty, or a call returns `false`, throw `App\Exceptions\FetchFailed`. An error must never look like a result that holds no change. A delta that the user did not ask for is the one exception: `pet audit <package>` warns and keeps the local report when it cannot fetch the delta of the granted version, and fails when the user names a version with `--from` and the fetch fails.
+Treat each failure of a fetch as fatal. When a body is empty, or a call returns `false`, throw `App\Exceptions\FetchFailed`. An error must never look like a result that holds no change. A delta that the user did not ask for is the one exception: `porto audit <package>` warns and keeps the local report when it cannot fetch the delta of the granted version, and fails when the user names a version with `--from` and the fetch fails.
 
-Ask no question, in any command. The user records a grant with `pet trust`, thus a question asks the user to say the same thing two times, and a question that reads no terminal answers itself with its own default.
+Ask no question, in any command. The user records a grant with `porto trust`, thus a question asks the user to say the same thing two times, and a question that reads no terminal answers itself with its own default.
 
-Grant no permission, and add no scan that reads the code of a package. The user trusts the bytes of a package or the user does not trust them, and a list of permissions asks the user to make a second decision that `pet` cannot prove. Report a fact of the tree instead: the hash, the count of files, the bytes, the changed paths and the source of each change.
+Grant no permission, and add no scan that reads the code of a package. The user trusts the bytes of a package or the user does not trust them, and a list of permissions asks the user to make a second decision that `porto` cannot prove. Report a fact of the tree instead: the hash, the count of files, the bytes, the changed paths and the source of each change.
 
-Run `composer test` after you change a file of source code. The command runs `rector process --dry-run`, `pint --test`, `./pet audit`, `phpstan analyse` and `pest --parallel`. The workflow `.github/workflows/tests.yml` runs the same steps on PHP 8.3, PHP 8.4 and PHP 8.5.
+Run `composer test` after you change a file of source code. The command runs `rector process --dry-run`, `pint --test`, `./porto audit`, `phpstan analyse` and `pest --parallel`. The workflow `.github/workflows/tests.yml` runs the same steps on PHP 8.3, PHP 8.4 and PHP 8.5.
 
-Install the dependencies of CI with `composer install`, and run no `composer update` in a job. `composer test` runs the gate `./pet audit`, thus a job that resolves a different tree reports a package that `pet.json` does not cover and fails on a change that the commit does not hold.
+Install the dependencies of CI with `composer install`, and run no `composer update` in a job. `composer test` runs the gate `./porto audit`, thus a job that resolves a different tree reports a package that `porto.json` does not cover and fails on a change that the commit does not hold.
 
 ---
 
@@ -117,37 +117,37 @@ Install the dependencies of CI with `composer install`, and run no `composer upd
 
 | Command | Function |
 |---|---|
-| `pet audit` | show what is unaudited, worst first, with the count of files that each review costs, and exit non-zero when a package is ungranted, when its bytes changed, or when `vendor/` disagrees with `composer.lock` |
-| `pet audit <package>` | show the content hash, the count of files, the bytes and the reviewable delta in buckets; `--from` names the version to compare from |
-| `pet audit <package> -v` | show the same report with the source of each change |
-| `pet trust` | trust each installed package at the bytes on disk, and make the ledger |
-| `pet trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `pet.json` |
+| `porto audit` | show what is unaudited, worst first, with the count of files that each review costs, and exit non-zero when a package is ungranted, when its bytes changed, or when `vendor/` disagrees with `composer.lock` |
+| `porto audit <package>` | show the content hash, the count of files, the bytes and the reviewable delta in buckets; `--from` names the version to compare from |
+| `porto audit <package> -v` | show the same report with the source of each change |
+| `porto trust` | trust each installed package at the bytes on disk, and make the ledger |
+| `porto trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `porto.json` |
 
-`pet` with no argument runs `pet audit`.
+`porto` with no argument runs `porto audit`.
 
-Show the delta of `pet audit <package>` from the `--from` option when the user gives one, and from the version in `pet.json` when that version is not the installed version. Fetch nothing in each other case, thus the report of a covered package stays local and instant.
+Show the delta of `porto audit <package>` from the `--from` option when the user gives one, and from the version in `porto.json` when that version is not the installed version. Fetch nothing in each other case, thus the report of a covered package stays local and instant.
 
-Print the source of each change with `-v`, in `pet audit <package>` and in `pet trust <package>`. The report of each command names the count of changes and invites `-v` when the user gives no `-v`, thus one command holds the review and no command points at a second command.
+Print the source of each change with `-v`, in `porto audit <package>` and in `porto trust <package>`. The report of each command names the count of changes and invites `-v` when the user gives no `-v`, thus one command holds the review and no command points at a second command.
 
-Print the source of each change under the path of that change, and indent it. `App\Support\DeltaRenderer` owns that output, thus `pet audit` and `pet trust` print one format.
+Print the source of each change under the path of that change, and indent it. `App\Support\DeltaRenderer` owns that output, thus `porto audit` and `porto trust` print one format.
 
-Fetch nothing in `pet trust` with no argument, and build no delta. That command makes the baseline of a project that holds no ledger, thus it records the bytes on disk of each package that `pet audit` reports, and a fetch of one archive for each package makes the command too slow to use. `pet trust <package>` fetches the delta, because the user asks about one package.
+Fetch nothing in `porto trust` with no argument, and build no delta. That command makes the baseline of a project that holds no ledger, thus it records the bytes on disk of each package that `porto audit` reports, and a fetch of one archive for each package makes the command too slow to use. `porto trust <package>` fetches the delta, because the user asks about one package.
 
-Make `pet trust` with no argument show each package with its status and the reason of that status, and record each one. The command asks nothing: section 4 holds the reason.
+Make `porto trust` with no argument show each package with its status and the reason of that status, and record each one. The command asks nothing: section 4 holds the reason.
 
-Give `pet trust` a list of packages, thus the user records the result of one review of many packages in one run. The command records each package that the user names, shows the delta of each one, and writes `pet.json` one time.
+Give `porto trust` a list of packages, thus the user records the result of one review of many packages in one run. The command records each package that the user names, shows the delta of each one, and writes `porto.json` one time.
 
 Read each installed package in each command, and add no option that selects a part of the tree. A dev dependency runs on the machine of the developer and in the job of CI, thus it holds the same reach as a package of `require`, and a report that hides it makes the gate pass on a tree that nobody audited.
 
-List each package that needs review, and add no option that limits the count. `pet audit` with no package is the full report, and a report that stops at a count hides the work that remains.
+List each package that needs review, and add no option that limits the count. `porto audit` with no package is the full report, and a report that stops at a count hides the work that remains.
 
-Reject `--from` in `pet trust` with no package, and in `pet trust` with more than one package. That option asks about one package, thus the command names the option and tells the user to give one package.
+Reject `--from` in `porto trust` with no package, and in `porto trust` with more than one package. That option asks about one package, thus the command names the option and tells the user to give one package.
 
-Make `pet audit` the gate of CI: the command prints the report and exits non-zero when a package is ungranted, when its bytes changed, or when the tree in `vendor/` disagrees with `composer.lock`. `composer test` runs the gate as the script `test:dependencies`, thus a change that breaks the gate breaks the test suite.
+Make `porto audit` the gate of CI: the command prints the report and exits non-zero when a package is ungranted, when its bytes changed, or when the tree in `vendor/` disagrees with `composer.lock`. `composer test` runs the gate as the script `test:dependencies`, thus a change that breaks the gate breaks the test suite.
 
-Exit non-zero from `pet audit <package>` when that package is ungranted or when its bytes changed. One rule holds for the two forms of the command, thus a script gates on one package.
+Exit non-zero from `porto audit <package>` when that package is ungranted or when its bytes changed. One rule holds for the two forms of the command, thus a script gates on one package.
 
-Compare `vendor/` against `composer.lock` in each run of `pet audit` with no package, and add no option for it. The read of `composer.lock` costs one file, and a report of a tree that disagrees with the lock file names a version that the user did not install.
+Compare `vendor/` against `composer.lock` in each run of `porto audit` with no package, and add no option for it. The read of `composer.lock` costs one file, and a report of a tree that disagrees with the lock file names a version that the user did not install.
 
 Keep the count of files to review in the gate, thus a failing job of CI names the cost of each review. The gate fetches one archive for a package that changed, and reports the whole package when that fetch fails.
 
@@ -194,19 +194,19 @@ Print no source of an `Opaque` change, and print the source of each other change
 
 ## 8. The ledger
 
-Keep the ledger in `pet.json` at the root of the project. Use JSON, because PHP reads JSON in its core and Composer uses JSON.
+Keep the ledger in `porto.json` at the root of the project. Use JSON, because PHP reads JSON in its core and Composer uses JSON.
 
 Write one entry for each package: the `version` and the `hash` of the installed tree. Put an entry of a package that Composer installed as a dependency of the project in `require`, and an entry of a dev dependency in `require-dev`. `App\Ledger\Grant` holds one entry.
 
-Keep the `version` in the entry. Packagist addresses an archive by version and no package carries a digest of its dist, thus `pet audit <package>` cannot fetch the tree that the user reviewed from the hash alone.
+Keep the `version` in the entry. Packagist addresses an archive by version and no package carries a digest of its dist, thus `porto audit <package>` cannot fetch the tree that the user reviewed from the hash alone.
 
-Write one entry for each package and overwrite that entry on each `pet trust`. Keep no history of a version that the project stopped using: git holds the history, and section 2 forbids a record of what the project stopped doing.
+Write one entry for each package and overwrite that entry on each `porto trust`. Keep no history of a version that the project stopped using: git holds the history, and section 2 forbids a record of what the project stopped doing.
 
-`App\Ledger\Document` owns each read of `pet.json` and each write of `pet.json`. Do not read that file and do not write that file in a different class. `App\Ledger\Ledger` is a view on the document and touches no file.
+`App\Ledger\Document` owns each read of `porto.json` and each write of `porto.json`. Do not read that file and do not write that file in a different class. `App\Ledger\Ledger` is a view on the document and touches no file.
 
 Read the file again before each write and merge the sections, thus a writer never deletes a section that the writer does not own. `Ledger` owns `require` and `require-dev` and writes both in full.
 
-Order the packages of each section, thus a `git diff` of `pet.json` stays reviewable.
+Order the packages of each section, thus a `git diff` of `porto.json` stays reviewable.
 
 Keep the `notes` of the entry when the user records a package again and gives no `--notes`. A grant that the user annotated keeps that sentence until the user replaces it.
 
@@ -214,9 +214,9 @@ Make a `Grant` of many packages from the `App\Ledger\PackageAudit` that `App\Led
 
 Report a package as covered when the entry holds the hash of the installed tree. `App\Ledger\AuditStatus` names each other result: `Ungranted` when no entry exists, and `Changed` when the hash differs.
 
-Raise the constant `SCHEMA` of `App\Ledger\Document` when you change the shape of a section, and write the message that tells the user what to do. Schema 1 recorded an audit under a criterion, schema 2 recorded a list of permissions, and `Document` tells the user to delete the file and run `pet trust` again.
+Raise the constant `SCHEMA` of `App\Ledger\Document` when you change the shape of a section, and write the message that tells the user what to do. Schema 1 recorded an audit under a criterion, schema 2 recorded a list of permissions, and `Document` tells the user to delete the file and run `porto trust` again.
 
-Read `pet.json` for the shape of each section. The project audits itself, thus that file shows the current shape.
+Read `porto.json` for the shape of each section. The project audits itself, thus that file shows the current shape.
 
 ---
 
@@ -236,7 +236,7 @@ A GitHub zipball answers 403 to a request that carries no `User-Agent` header, a
 
 `symfony/var-dumper` changed `composer.json` alone between v7.4.14 and v7.4.15. This is the common delta.
 
-`pestphp/pest` ships an empty file at `.temp/.gitkeep`, and Pest gives that directory to PHPUnit as the cache directory. A tree that lost that file fails the gate of CI, because the hash of the tree of a fresh install holds it. When `pet audit` reports that the bytes of this package changed, run `ls vendor/pestphp/pest/.temp` first: when the directory is absent, make the file again with `mkdir -p vendor/pestphp/pest/.temp && : > vendor/pestphp/pest/.temp/.gitkeep`, and then run `./pet trust pestphp/pest`.
+`pestphp/pest` ships an empty file at `.temp/.gitkeep`, and Pest gives that directory to PHPUnit as the cache directory. A tree that lost that file fails the gate of CI, because the hash of the tree of a fresh install holds it. When `porto audit` reports that the bytes of this package changed, run `ls vendor/pestphp/pest/.temp` first: when the directory is absent, make the file again with `mkdir -p vendor/pestphp/pest/.temp && : > vendor/pestphp/pest/.temp/.gitkeep`, and then run `./porto trust pestphp/pest`.
 
 Ubuntu 24.04 holds libxml 2.9.14, and the machine of the developer holds libxml 2.15. The HTML parser of libxml 2.9 deletes a character between `\x00` and `\x1f`, and the parser of libxml 2.15 keeps it. Termwind gives the HTML of a component to `DOMDocument`, thus a component that receives a raw control character prints `1.0.0[2K` on the job of CI and `1.0.0?[2K` on the machine of the developer. Clean the text before the component reads it.
 
@@ -252,21 +252,21 @@ Read the full tree, and add no cache for speed. A hash of 6,953 files and 91.2 M
 
 ## 10. How to test a change by hand
 
-Run `./pet audit symfony/console` two times, and compare the two hashes: the hashes are equal. Change one byte of a file of that package in `vendor/`: the hash changes.
+Run `./porto audit symfony/console` two times, and compare the two hashes: the hashes are equal. Change one byte of a file of that package in `vendor/`: the hash changes.
 
-Run `./pet audit carbonphp/carbon-doctrine-types --from=3.1.0`: the report names the two changed paths, holds no source, and invites `-v`. Run the same command with `-v`: the report holds the two hunks, and each hunk is under the path of its file.
+Run `./porto audit carbonphp/carbon-doctrine-types --from=3.1.0`: the report names the two changed paths, holds no source, and invites `-v`. Run the same command with `-v`: the report holds the two hunks, and each hunk is under the path of its file.
 
-Run `./pet audit laravel/pint --from=v1.30.4 -v`: the report shows the PHAR as an opaque artifact, holds no diff of it, and warns that nobody reads those bytes.
+Run `./porto audit laravel/pint --from=v1.30.4 -v`: the report shows the PHAR as an opaque artifact, holds no diff of it, and warns that nobody reads those bytes.
 
-Delete `pet.json` and run `./pet trust`: the command lists each installed package with its status and the reason of that status, asks nothing, and writes the file. Run `./pet audit`: the command exits 0.
+Delete `porto.json` and run `./porto trust`: the command lists each installed package with its status and the reason of that status, asks nothing, and writes the file. Run `./porto audit`: the command exits 0.
 
-Turn the network off and run `./pet audit <package> --from=<version>`: the command fails with an error, and prints no delta that holds no change. Turn the network off and run `./pet audit <package>` for a package that holds a grant of an earlier version: the command warns, prints the local report and exits non-zero, because that package is not covered.
+Turn the network off and run `./porto audit <package> --from=<version>`: the command fails with an error, and prints no delta that holds no change. Turn the network off and run `./porto audit <package>` for a package that holds a grant of an earlier version: the command warns, prints the local report and exits non-zero, because that package is not covered.
 
-Run `./pet audit laravel/pint` while `pet.json` grants the installed version: the report holds no delta and reaches no network.
+Run `./porto audit laravel/pint` while `porto.json` grants the installed version: the report holds no delta and reaches no network.
 
-Run `./pet audit` while `pet.json` covers each installed package: the command exits 0. Add one byte to a file of one package in `vendor/` and run the command again: the command exits non-zero, reports that package as `changed` and prints the two hashes. Delete one entry of `pet.json` by hand and run the command again: the command reports that package as `ungranted`, and `./pet audit <that package>` exits non-zero too.
+Run `./porto audit` while `porto.json` covers each installed package: the command exits 0. Add one byte to a file of one package in `vendor/` and run the command again: the command exits non-zero, reports that package as `changed` and prints the two hashes. Delete one entry of `porto.json` by hand and run the command again: the command reports that package as `ungranted`, and `./porto audit <that package>` exits non-zero too.
 
-Run `./pet trust <package> <package>`: the command shows the delta of each one, writes the two entries, and asks nothing. Run `./pet trust <package> <package> --from=<version>`: the command fails and tells the user to give one package.
+Run `./porto trust <package> <package>`: the command shows the delta of each one, writes the two entries, and asks nothing. Run `./porto trust <package> <package> --from=<version>`: the command fails and tells the user to give one package.
 
 ---
 
@@ -284,6 +284,6 @@ Do not add a second ecosystem, for example npm or Cargo.
 
 Do not add a web interface or a hosted service.
 
-Do not add `nikic/php-parser`. `pet` reads no PHP source, and a parser in the tree of a user makes a version conflict with Rector and with PHPStan.
+Do not add `nikic/php-parser`. `porto` reads no PHP source, and a parser in the tree of a user makes a version conflict with Rector and with PHPStan.
 
-Ship no compiled binary. `pet` must run against itself, thus each artifact must stay readable: a PHAR of PHP source is extractable and diffable. Build the PHAR with `php pet app:build`, which reads `box.json`.
+Ship no compiled binary. `porto` must run against itself, thus each artifact must stay readable: a PHAR of PHP source is extractable and diffable. Build the PHAR with `php porto app:build`, which reads `box.json`.

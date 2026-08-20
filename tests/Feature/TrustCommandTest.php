@@ -12,7 +12,7 @@ it('records the review of one package, and turns the gate green', function (): v
         $trusted = Artisan::call('trust', ['packages' => ['acme/widget'], '--path' => $fixture->rootPath]);
         $trustOutput = Artisan::output();
 
-        $ledger = $fixture->read('pet.json');
+        $ledger = $fixture->read('porto.json');
 
         $audited = Artisan::call('audit', ['--path' => $fixture->rootPath]);
         $auditOutput = Artisan::output();
@@ -34,7 +34,7 @@ it('records the review of one package, and turns the gate green', function (): v
 it('baselines every installed package of a project that holds no ledger', function (): void {
     $fixture = Fixture::open('stale-project');
 
-    unlink($fixture->path('pet.json'));
+    unlink($fixture->path('porto.json'));
 
     try {
         $trusted = Artisan::call('trust', ['--path' => $fixture->rootPath]);
@@ -49,7 +49,7 @@ it('baselines every installed package of a project that holds no ledger', functi
         ->and($trustOutput)
         ->toContain('to trust (1)')
         ->toContain('no entry')
-        ->toContain('wrote pet.json')
+        ->toContain('wrote porto.json')
         ->and($audited)->toBe(0);
 });
 

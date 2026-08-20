@@ -44,7 +44,7 @@ final readonly class PendingUpdate
 
     public static function create(string $plan = self::PLAN, int $exitCode = 0): self
     {
-        $base = sys_get_temp_dir().'/pet-'.bin2hex(random_bytes(6));
+        $base = sys_get_temp_dir().'/porto-'.bin2hex(random_bytes(6));
 
         $project = new self($base.'/project', $base.'/cache');
 
@@ -55,7 +55,7 @@ final readonly class PendingUpdate
         $project->seedLedger();
         $project->seedComposer($plan, $exitCode);
 
-        putenv('PET_CACHE_DIR='.$project->cachePath);
+        putenv('PORTO_CACHE_DIR='.$project->cachePath);
 
         return $project;
     }
@@ -67,8 +67,8 @@ final readonly class PendingUpdate
 
     public function remove(): void
     {
-        putenv('PET_CACHE_DIR');
-        putenv('PET_COMPOSER_BINARY');
+        putenv('PORTO_CACHE_DIR');
+        putenv('PORTO_COMPOSER_BINARY');
 
         $base = dirname($this->rootPath);
 
@@ -227,7 +227,7 @@ final readonly class PendingUpdate
     {
         $hash = Manifest::ofDirectory($this->releasePath(self::TRUSTED_VERSION, self::TRUSTED_REFERENCE))->hash();
 
-        $this->write($this->rootPath.'/pet.json', Json::encode([
+        $this->write($this->rootPath.'/porto.json', Json::encode([
             'schema' => 3,
             'require' => [
                 self::PACKAGE => [
@@ -247,7 +247,7 @@ final readonly class PendingUpdate
 
         chmod($path, 0o755);
 
-        putenv('PET_COMPOSER_BINARY='.$path);
+        putenv('PORTO_COMPOSER_BINARY='.$path);
     }
 
     private function write(string $path, string $contents): void

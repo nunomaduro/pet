@@ -30,7 +30,7 @@ final readonly class StaleProject
 
     public static function create(): self
     {
-        $base = sys_get_temp_dir().'/pet-'.bin2hex(random_bytes(6));
+        $base = sys_get_temp_dir().'/porto-'.bin2hex(random_bytes(6));
 
         $project = new self($base.'/project', $base.'/cache');
 
@@ -40,14 +40,14 @@ final readonly class StaleProject
         $project->seedComposerFiles();
         $project->seedLedger();
 
-        putenv('PET_CACHE_DIR='.$project->cachePath);
+        putenv('PORTO_CACHE_DIR='.$project->cachePath);
 
         return $project;
     }
 
     public function remove(): void
     {
-        putenv('PET_CACHE_DIR');
+        putenv('PORTO_CACHE_DIR');
 
         $base = dirname($this->rootPath);
 
@@ -198,7 +198,7 @@ final readonly class StaleProject
     {
         $hash = Manifest::ofDirectory($this->grantedTreePath())->hash();
 
-        $this->write($this->rootPath.'/pet.json', Json::encode([
+        $this->write($this->rootPath.'/porto.json', Json::encode([
             'schema' => 3,
             'require' => [
                 self::PACKAGE => [

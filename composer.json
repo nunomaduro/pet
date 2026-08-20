@@ -1,5 +1,5 @@
 {
-    "name": "nunomaduro/pet",
+    "name": "nunomaduro/porto",
     "description": "A dependency audit ledger for PHP.",
     "keywords": ["supply chain", "audit", "composer", "security", "console", "cli"],
     "type": "composer-plugin",
@@ -44,7 +44,7 @@
         "sort-packages": true,
         "optimize-autoloader": true,
         "allow-plugins": {
-            "nunomaduro/pet": true,
+            "nunomaduro/porto": true,
             "pestphp/pest-plugin": true
         }
     },
@@ -58,7 +58,7 @@
             "rector process --dry-run",
             "pint --test"
         ],
-        "test:dependencies": "./pet audit",
+        "test:dependencies": "./porto audit",
         "test:types": "phpstan analyse",
         "test:unit": "pest --parallel",
         "test": [
@@ -70,5 +70,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "bin": ["builds/pet"]
+    "bin": ["builds/porto"]
 }

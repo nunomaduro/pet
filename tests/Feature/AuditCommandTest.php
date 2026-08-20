@@ -96,7 +96,7 @@ it('asks for a baseline when the project holds no ledger', function (): void {
     expect($status)->toBe(1)
         ->and($output)
         ->toContain('No ledger yet')
-        ->toContain('pet.json')
+        ->toContain('porto.json')
         ->toContain('acme/widget 1.0.0')
         ->toContain('acme/lint 1.0.0 (dev)')
         ->toContain('5 files to review (whole package)')
@@ -180,5 +180,5 @@ it('asks for the verbose flag of composer when composer runs the audit', functio
         ->and($output)
         ->toContain('… and 18 more, with composer update -v')
         ->toContain('with `composer update -v`')
-        ->and(str_contains($output, 'pet audit -v'))->toBeFalse();
+        ->and(str_contains($output, 'porto audit -v'))->toBeFalse();
 });

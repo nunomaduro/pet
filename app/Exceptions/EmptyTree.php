@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-final class EmptyTree extends PetException
+final class EmptyTree extends PortoException
 {
     public static function at(string $directory): self
     {

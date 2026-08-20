@@ -18,7 +18,7 @@ final readonly class ComposerPlanner
 
     public static function default(): self
     {
-        $binary = getenv('PET_COMPOSER_BINARY');
+        $binary = getenv('PORTO_COMPOSER_BINARY');
 
         return new self(is_string($binary) && $binary !== '' ? $binary : 'composer');
     }

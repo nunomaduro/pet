@@ -1,0 +1,11 @@
+{
+    "schema": 3,
+    "require": {
+        "acme/wide": {
+            "version": "1.0.0",
+            "hash": "tree-v1:0d47dea58188cc483b9973ed12b02939"
+        }
+    },
+    "require-dev": {}
+}
+

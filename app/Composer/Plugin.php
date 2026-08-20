@@ -58,7 +58,7 @@ final class Plugin implements EventSubscriberInterface, PluginInterface
 
         if (! $process->isSuccessful()) {
             throw new ScriptExecutionException(
-                'pet found packages that your ledger does not cover.',
+                'porto found packages that your ledger does not cover.',
                 $process->getExitCode() ?? 1,
             );
         }

@@ -28,7 +28,7 @@ final readonly class Document
 
     public static function forProject(Project $project): self
     {
-        return self::atPath($project->petFilePath());
+        return self::atPath($project->portoFilePath());
     }
 
     public static function atPath(string $path): self
@@ -37,13 +37,13 @@ final readonly class Document
             return new self($path, []);
         }
 
-        $data = Json::readFile($path, 'the pet file');
+        $data = Json::readFile($path, 'the porto file');
 
         $schema = $data['schema'] ?? null;
 
         if ($schema === 1 || $schema === 2) {
             throw new Failure(sprintf(
-                'The pet file [%s] declares schema %d, which recorded permissions. Schema %d records the version and the hash of each package that you trust. Delete the file and run `pet trust` again.',
+                'The porto file [%s] declares schema %d, which recorded permissions. Schema %d records the version and the hash of each package that you trust. Delete the file and run `porto trust` again.',
                 $path,
                 $schema,
                 self::SCHEMA,
@@ -52,7 +52,7 @@ final readonly class Document
 
         if ($schema !== self::SCHEMA) {
             throw new Failure(sprintf(
-                'The pet file [%s] declares schema %s; this build of pet reads schema %d.',
+                'The porto file [%s] declares schema %s; this build of porto reads schema %d.',
                 $path,
                 is_scalar($schema) ? (string) $schema : 'none',
                 self::SCHEMA,
@@ -103,7 +103,7 @@ final readonly class Document
         }
 
         if (@file_put_contents($this->path, Json::encode($ordered)) === false) {
-            throw new Failure(sprintf('Could not write the pet file to [%s].', $this->path));
+            throw new Failure(sprintf('Could not write the porto file to [%s].', $this->path));
         }
     }
 }

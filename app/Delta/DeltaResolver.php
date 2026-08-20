@@ -58,7 +58,7 @@ final readonly class DeltaResolver
 
         if ($fromVersion === null) {
             throw new Failure(sprintf(
-                '[%s@%s] has no earlier release to compare against. Pass an explicit version: `pet audit %s <from>`.',
+                '[%s@%s] has no earlier release to compare against. Pass an explicit version: `porto audit %s <from>`.',
                 $package,
                 $toVersion,
                 $package,

@@ -14,7 +14,7 @@ final readonly class Cache
 
     public static function default(): self
     {
-        $override = getenv('PET_CACHE_DIR');
+        $override = getenv('PORTO_CACHE_DIR');
 
         if (is_string($override) && $override !== '') {
             return new self(Path::normalize($override));
@@ -29,7 +29,7 @@ final readonly class Cache
             default => sys_get_temp_dir(),
         };
 
-        return new self(Path::normalize(Path::join($base, 'pet')));
+        return new self(Path::normalize(Path::join($base, 'porto')));
     }
 
     public function path(string ...$segments): string

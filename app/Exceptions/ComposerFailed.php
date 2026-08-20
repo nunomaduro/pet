@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-final class ComposerFailed extends PetException
+final class ComposerFailed extends PortoException
 {
     /**
      * @param  array<int, string>  $output
@@ -17,7 +17,7 @@ final class ComposerFailed extends PetException
     public static function missing(string $binary): self
     {
         return new self(sprintf(
-            'Could not find [%s] on your PATH. Install Composer, or name the binary in PET_COMPOSER_BINARY.',
+            'Could not find [%s] on your PATH. Install Composer, or name the binary in PORTO_COMPOSER_BINARY.',
             $binary,
         ), []);
     }

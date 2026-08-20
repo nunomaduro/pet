@@ -1,6 +1,6 @@
 {
     "_readme": [
-        "This file is a fixture: pet reads it, Composer never wrote it."
+        "This file is a fixture: porto reads it, Composer never wrote it."
     ],
     "content-hash": "fixture",
     "packages": [

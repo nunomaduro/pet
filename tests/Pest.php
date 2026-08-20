@@ -8,7 +8,7 @@ pest()->extend(TestCase::class)->in('Feature');
 
 function stubBinary(string $script): string
 {
-    $path = sys_get_temp_dir().'/pet-tests/'.bin2hex(random_bytes(8));
+    $path = sys_get_temp_dir().'/porto-tests/'.bin2hex(random_bytes(8));
 
     if (! is_dir(dirname($path))) {
         mkdir(dirname($path), 0o777, true);

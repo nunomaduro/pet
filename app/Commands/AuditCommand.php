@@ -6,7 +6,7 @@ namespace App\Commands;
 
 use App\Delta\Delta;
 use App\Delta\DeltaResolver;
-use App\Exceptions\PetException;
+use App\Exceptions\PortoException;
 use App\Identity\Fingerprinter;
 use App\Ledger\Auditor;
 use App\Ledger\AuditStatus;
@@ -43,8 +43,8 @@ final class AuditCommand extends Command
     {
         try {
             $project = Project::locate($this->stringOption('path') ?? (string) getcwd());
-        } catch (PetException $petException) {
-            $this->components->error($petException->getMessage());
+        } catch (PortoException $portoException) {
+            $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
@@ -72,8 +72,8 @@ final class AuditCommand extends Command
 
             $discrepancies = $auditor->lockDiscrepancies();
             $report = $auditor->report();
-        } catch (PetException $petException) {
-            $this->components->error($petException->getMessage());
+        } catch (PortoException $portoException) {
+            $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
@@ -131,7 +131,7 @@ final class AuditCommand extends Command
 
         if (! $auditor->ledger->exists()) {
             $this->components->warn(sprintf(
-                'No ledger yet. `pet trust` records every installed package in %s.',
+                'No ledger yet. `porto trust` records every installed package in %s.',
                 $this->relative($project->rootPath, $auditor->ledger->path),
             ));
             $this->newLine();
@@ -193,11 +193,11 @@ final class AuditCommand extends Command
         $this->newLine();
 
         $this->components->error($this->output->isVerbose()
-            ? sprintf('%d package(s) are not covered. Record them with `pet trust`.', count($failing))
+            ? sprintf('%d package(s) are not covered. Record them with `porto trust`.', count($failing))
             : sprintf(
-                '%d package(s) are not covered. Read every change with `%s`, then record them with `pet trust`.',
+                '%d package(s) are not covered. Read every change with `%s`, then record them with `porto trust`.',
                 count($failing),
-                Invitation::verbose('pet audit -v'),
+                Invitation::verbose('porto audit -v'),
             ));
 
         return self::FAILURE;
@@ -219,8 +219,8 @@ final class AuditCommand extends Command
             $installed = $fingerprinter->repository()->get($package);
             $fingerprint = $fingerprinter->ofPackage($installed);
             $grant = Ledger::forProject($project)->grantFor($installed->name);
-        } catch (PetException $petException) {
-            $this->components->error($petException->getMessage());
+        } catch (PortoException $portoException) {
+            $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
@@ -240,9 +240,9 @@ final class AuditCommand extends Command
                     to: $this->stringOption('to'),
                     useCache: $this->option('no-cache') !== true,
                 );
-            } catch (PetException $petException) {
+            } catch (PortoException $portoException) {
                 if ($requested) {
-                    $this->components->error($petException->getMessage());
+                    $this->components->error($portoException->getMessage());
 
                     return self::FAILURE;
                 }
@@ -250,7 +250,7 @@ final class AuditCommand extends Command
                 $unresolved = sprintf(
                     'Could not build the delta from the granted %s: %s',
                     $from,
-                    $petException->getMessage(),
+                    $portoException->getMessage(),
                 );
             }
         }
@@ -302,7 +302,7 @@ final class AuditCommand extends Command
         }
 
         if (! $covered) {
-            $this->components->info(sprintf('Record these bytes with `pet trust %s`.', $installed->name));
+            $this->components->info(sprintf('Record these bytes with `porto trust %s`.', $installed->name));
         }
 
         return $covered ? self::SUCCESS : self::FAILURE;
@@ -321,7 +321,7 @@ final class AuditCommand extends Command
 
         try {
             $delta = DeltaResolver::forProject($project)->resolve($audit->package, $from);
-        } catch (PetException) {
+        } catch (PortoException) {
             return $this->wholePackage($audit);
         }
 

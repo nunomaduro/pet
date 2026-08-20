@@ -6,7 +6,7 @@ namespace App\Commands;
 
 use App\Delta\Delta;
 use App\Delta\DeltaResolver;
-use App\Exceptions\PetException;
+use App\Exceptions\PortoException;
 use App\Identity\Fingerprint;
 use App\Ledger\Auditor;
 use App\Ledger\AuditStatus;
@@ -36,8 +36,8 @@ final class TrustCommand extends Command
         try {
             $project = Project::locate($this->stringOption('path') ?? (string) getcwd());
             $auditor = Auditor::forProject($project);
-        } catch (PetException $petException) {
-            $this->components->error($petException->getMessage());
+        } catch (PortoException $portoException) {
+            $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
@@ -52,15 +52,15 @@ final class TrustCommand extends Command
     private function trustProject(Project $project, Auditor $auditor): int
     {
         if ($this->stringOption('from') !== null) {
-            $this->components->error('The --from option needs one package. Run `pet trust <package>`.');
+            $this->components->error('The --from option needs one package. Run `porto trust <package>`.');
 
             return self::FAILURE;
         }
 
         try {
             $report = $auditor->report();
-        } catch (PetException $petException) {
-            $this->components->error($petException->getMessage());
+        } catch (PortoException $portoException) {
+            $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
@@ -92,8 +92,8 @@ final class TrustCommand extends Command
             }
 
             $auditor->ledger->save();
-        } catch (PetException $petException) {
-            $this->components->error($petException->getMessage());
+        } catch (PortoException $portoException) {
+            $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
@@ -140,7 +140,7 @@ final class TrustCommand extends Command
     private function trustPackages(Project $project, Auditor $auditor, array $names): int
     {
         if (count($names) > 1 && $this->stringOption('from') !== null) {
-            $this->components->error('The --from option needs one package. Run `pet trust <package> --from=<version>`.');
+            $this->components->error('The --from option needs one package. Run `porto trust <package> --from=<version>`.');
 
             return self::FAILURE;
         }
@@ -152,8 +152,8 @@ final class TrustCommand extends Command
                 $package = $auditor->installed()->get($name);
                 $fingerprint = $auditor->fingerprinter()->ofPackage($package);
                 $audit = $auditor->auditOf($package);
-            } catch (PetException $petException) {
-                $this->components->error($petException->getMessage());
+            } catch (PortoException $portoException) {
+                $this->components->error($portoException->getMessage());
 
                 return self::FAILURE;
             }
@@ -200,8 +200,8 @@ final class TrustCommand extends Command
 
         try {
             $auditor->ledger->save();
-        } catch (PetException $petException) {
-            $this->components->error($petException->getMessage());
+        } catch (PortoException $portoException) {
+            $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
@@ -228,8 +228,8 @@ final class TrustCommand extends Command
 
         try {
             return DeltaResolver::forProject($project)->resolve($package, $from);
-        } catch (PetException $petException) {
-            $this->components->warn(sprintf('Could not build a delta from %s: %s', $from, $petException->getMessage()));
+        } catch (PortoException $portoException) {
+            $this->components->warn(sprintf('Could not build a delta from %s: %s', $from, $portoException->getMessage()));
 
             return null;
         }

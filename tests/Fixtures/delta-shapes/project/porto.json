@@ -1,0 +1,27 @@
+{
+    "schema": 3,
+    "require": {
+        "acme/inert-only": {
+            "version": "1.0.0",
+            "hash": "tree-v1:770ba4ef896b6defc89ceaa713ad120a"
+        },
+        "acme/manifest-only": {
+            "version": "1.0.0",
+            "hash": "tree-v1:6a76baa10b4a80b64dddb6ba95d2534d"
+        },
+        "acme/media": {
+            "version": "1.0.0",
+            "hash": "tree-v1:ff1e20dc205d60b4c8802d01000a32ea"
+        },
+        "acme/moved": {
+            "version": "1.0.0",
+            "hash": "tree-v1:ba36da9124d1def0d8723c52ca4e9149"
+        },
+        "acme/opaque": {
+            "version": "1.0.0",
+            "hash": "tree-v1:834205105996a9fab234ed7575282831"
+        }
+    },
+    "require-dev": {}
+}
+

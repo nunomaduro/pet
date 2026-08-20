@@ -1,10 +1,10 @@
-# pet
+# porto
 
 <p>
-    <a href="https://github.com/nunomaduro/pet/actions"><img src="https://github.com/nunomaduro/pet/actions/workflows/tests.yml/badge.svg" alt="Build Status"></a>
-    <a href="https://packagist.org/packages/nunomaduro/pet"><img src="https://img.shields.io/packagist/dt/nunomaduro/pet" alt="Total Downloads"></a>
-    <a href="https://packagist.org/packages/nunomaduro/pet"><img src="https://img.shields.io/packagist/v/nunomaduro/pet" alt="Latest Stable Version"></a>
-    <a href="https://packagist.org/packages/nunomaduro/pet"><img src="https://img.shields.io/packagist/l/nunomaduro/pet" alt="License"></a>
+    <a href="https://github.com/nunomaduro/porto/actions"><img src="https://github.com/nunomaduro/porto/actions/workflows/tests.yml/badge.svg" alt="Build Status"></a>
+    <a href="https://packagist.org/packages/nunomaduro/porto"><img src="https://img.shields.io/packagist/dt/nunomaduro/porto" alt="Total Downloads"></a>
+    <a href="https://packagist.org/packages/nunomaduro/porto"><img src="https://img.shields.io/packagist/v/nunomaduro/porto" alt="Latest Stable Version"></a>
+    <a href="https://packagist.org/packages/nunomaduro/porto"><img src="https://img.shields.io/packagist/l/nunomaduro/porto" alt="License"></a>
     <a href="https://youtube.com/@nunomaduro?sub_confirmation=1"><img alt="YouTube Channel Subscribers" src="https://img.shields.io/youtube/channel/subscribers/UCO_hYZF2gb_CyG5sA7ArlGg?style=flat&label=youtube&color=brightgreen"></a>
 </p>
 
@@ -25,11 +25,11 @@
 <a name="introduction"></a>
 ## Introduction
 
-[pet](https://github.com/nunomaduro/pet) is a dependency audit ledger for PHP. It shows you what a `composer update` changed in the `vendor/` directory, and lets you (or your agent) review those changes, one by one.
+[porto](https://github.com/nunomaduro/porto) is a dependency audit ledger for PHP. It shows you what a `composer update` changed in the `vendor/` directory, and lets you (or your agent) review those changes, one by one.
 
 ```
 ❯ composer update
-❯ pet audit -v
+❯ porto audit -v
 
   to review (1, worst first)
 
@@ -62,41 +62,41 @@
 
   audited .................................................. 124 / 125 (99.2%)
 
-   ERROR  1 package(s) are not covered. Record them with `pet trust`.
+   ERROR  1 package(s) are not covered. Record them with `porto trust`.
 ```
 
-Read the diffs, then record them with `pet trust carbonphp/carbon-doctrine-types`. The next `pet audit` is green, and your build passes.
+Read the diffs, then record them with `porto trust carbonphp/carbon-doctrine-types`. The next `porto audit` is green, and your build passes.
 
 <a name="installation"></a>
 ## Installation
 
 > **Requires [PHP 8.3+](https://php.net/releases/)**.
 
-You may install pet into your project via the Composer package manager:
+You may install porto into your project via the Composer package manager:
 
 ```shell
-composer require nunomaduro/pet --dev
+composer require nunomaduro/porto --dev
 ```
 
-By default, pet commands are invoked using the `vendor/bin/pet` script that is included with the package:
+By default, porto commands are invoked using the `vendor/bin/porto` script that is included with the package:
 
 ```shell
-./vendor/bin/pet audit
+./vendor/bin/porto audit
 ```
 
-The examples below call `pet` for brevity. If you would like to type `pet` as well, you may configure a shell alias:
+The examples below call `porto` for brevity. If you would like to type `porto` as well, you may configure a shell alias:
 
 ```shell
-alias pet='./vendor/bin/pet'
+alias porto='./vendor/bin/porto'
 ```
 
 <a name="trusting-your-dependencies"></a>
 ## Trusting Your Dependencies
 
-Before pet can show you what changed, it needs to know what you trust today. The `trust` command lists every installed package with the reason it needs an entry, records the tree on disk, and writes the `pet.json` ledger:
+Before porto can show you what changed, it needs to know what you trust today. The `trust` command lists every installed package with the reason it needs an entry, records the tree on disk, and writes the `porto.json` ledger:
 
 ```shell
-pet trust
+porto trust
 ```
 
 ```
@@ -107,7 +107,7 @@ pet trust
   carbonphp/carbon-doctrine-types 3.2.0 .. no entry; this tree is ad33848c07e8
   …
 
-   INFO  Trusted 125 package(s), and wrote pet.json.
+   INFO  Trusted 125 package(s), and wrote porto.json.
 ```
 
 This command asks no questions and reaches no network. It is the baseline of a project that has never been audited, so review the tree in `vendor/` before you run it on a project you do not know.
@@ -118,7 +118,7 @@ This command asks no questions and reaches no network. It is the baseline of a p
 Once the ledger exists, run the `audit` command after every `composer update`. It reports the packages that have no entry, the packages whose contents changed, and the trees in `vendor/` that disagree with `composer.lock` — worst first, with the changed paths of each one and the number of files the review costs you:
 
 ```shell
-pet audit
+porto audit
 ```
 
 ```
@@ -133,7 +133,7 @@ The command exits with a non-zero status code while a package is unread, so it a
 You may audit one package by passing its name to the `audit` command:
 
 ```shell
-pet audit symfony/console
+porto audit symfony/console
 ```
 
 ```
@@ -144,10 +144,10 @@ pet audit symfony/console
   path ................................................ vendor/symfony/console
 ```
 
-When the ledger already covers the installed version, the report stays local and instant. When the ledger holds an earlier version, pet fetches that version from Packagist and shows you the delta. If you would like to compare against some other version, you may name it using the `--from` option:
+When the ledger already covers the installed version, the report stays local and instant. When the ledger holds an earlier version, porto fetches that version from Packagist and shows you the delta. If you would like to compare against some other version, you may name it using the `--from` option:
 
 ```shell
-pet audit carbonphp/carbon-doctrine-types --from=3.1.0
+porto audit carbonphp/carbon-doctrine-types --from=3.1.0
 ```
 
 <a name="reviewing-the-source-of-a-change"></a>
@@ -156,15 +156,15 @@ pet audit carbonphp/carbon-doctrine-types --from=3.1.0
 By default, a delta names up to five changed paths of each bucket, counts the paths that remain, and shows no source. You may read every path and the source of every change by providing the `-v` option, on the full report or on a single package:
 
 ```shell
-pet audit carbonphp/carbon-doctrine-types -v
+porto audit carbonphp/carbon-doctrine-types -v
 ```
 
 Changes arrive in four buckets, worst first: the install-time manifest, where `scripts`, `bin` and plugin classes live; the opaque artifacts that cannot be reviewed; the runtime source; and the inert files, such as tests and documentation.
 
-Some files hold no readable source. pet tells you so, and shows you no diff of them:
+Some files hold no readable source. porto tells you so, and shows you no diff of them:
 
 ```
-❯ pet audit laravel/pint --from=v1.30.4 -v
+❯ porto audit laravel/pint --from=v1.30.4 -v
 
   install-time manifest (1)
     ~ composer.json  require
@@ -187,16 +187,16 @@ Some files hold no readable source. pet tells you so, and shows you no diff of t
 <a name="recording-a-review"></a>
 ### Recording a Review
 
-When the review is done, record it. You may pass every package you reviewed to the `trust` command, which shows the delta of each one and writes `pet.json` once:
+When the review is done, record it. You may pass every package you reviewed to the `trust` command, which shows the delta of each one and writes `porto.json` once:
 
 ```shell
-pet trust carbonphp/carbon-doctrine-types laravel/pint
+porto trust carbonphp/carbon-doctrine-types laravel/pint
 ```
 
 If you would like to keep a sentence next to the entries you record, you may provide the `--notes` option. The note stays in the ledger until you replace it:
 
 ```shell
-pet trust carbonphp/carbon-doctrine-types --notes="Reviewed with the team."
+porto trust carbonphp/carbon-doctrine-types --notes="Reviewed with the team."
 ```
 
 <a name="previewing-an-update"></a>
@@ -205,7 +205,7 @@ pet trust carbonphp/carbon-doctrine-types --notes="Reviewed with the team."
 You may read the review before you take the update. The `preview` command asks Composer what the next `composer update` would do, fetches both sides of every version that moves from Packagist, and shows you the delta. The `vendor/` directory of your project stays as it is:
 
 ```shell
-pet preview
+porto preview
 ```
 
 ```
@@ -223,13 +223,13 @@ pet preview
   psr/simple-cache 3.0.0 ......................... nothing to review (removed)
       composer would take this package out of the tree
 
-   INFO  3 package(s) change. Read the source of their changes with `pet preview -v`, then run `composer update`.
+   INFO  3 package(s) change. Read the source of their changes with `porto preview -v`, then run `composer update`.
 ```
 
 A package that arrives for the first time has nothing to compare against, so the whole package is the review. A package that leaves takes its files with it. Every version that moves arrives as a delta, and you may read the source of each change with the `-v` option:
 
 ```shell
-pet preview -v
+porto preview -v
 ```
 
 ```
@@ -254,19 +254,19 @@ pet preview -v
 The command reads the plan from the `composer` binary on your PATH, and it asks you nothing. It exits with a zero status code whenever the preview is complete, so you may put it in front of the update itself:
 
 ```shell
-pet preview && composer update && pet audit
+porto preview && composer update && porto audit
 ```
 
 <a name="running-on-every-update"></a>
 ## Running on Every Update
 
-pet ships a Composer plugin, so the audit runs by itself. Composer asks you to trust the plugin when you install pet, and you may also allow it by hand:
+porto ships a Composer plugin, so the audit runs by itself. Composer asks you to trust the plugin when you install porto, and you may also allow it by hand:
 
 ```json
 {
     "config": {
         "allow-plugins": {
-            "nunomaduro/pet": true
+            "nunomaduro/porto": true
         }
     }
 }
@@ -291,7 +291,7 @@ From then on, every `composer update`, `composer require` and `composer remove` 
 
   audited .................................................... 75 / 76 (98.7%)
 
-   ERROR  1 package(s) are not covered. Read the source of their changes with `composer update -v`, then record them with `pet trust`.
+   ERROR  1 package(s) are not covered. Read the source of their changes with `composer update -v`, then record them with `porto trust`.
 ```
 
 Composer runs the audit, so the report asks for `composer update -v`. That option reaches the audit, and the source of every change arrives under the output of Composer.
@@ -299,13 +299,13 @@ Composer runs the audit, so the report asks for `composer update -v`. That optio
 The update itself is already on disk when the report arrives. Nothing is undone, and nothing is blocked: the exit code is what stops the next step of your script or your pipeline. Read the changes, then record them:
 
 ```shell
-pet trust carbonphp/carbon-doctrine-types
+porto trust carbonphp/carbon-doctrine-types
 ```
 
 A project that has no ledger yet is not failed. The plugin says so once, and leaves your update alone:
 
 ```
-pet has no ledger in this project yet. Run `pet trust` to record what you trust today.
+porto has no ledger in this project yet. Run `porto trust` to record what you trust today.
 ```
 
 <a name="available-commands"></a>
@@ -313,21 +313,21 @@ pet has no ledger in this project yet. Run `pet trust` to record what you trust 
 
 | Command | Function |
 |---|---|
-| `pet audit` | show what is unaudited, worst first, with the reviewable delta of each package, the source of each change and the count of files that each review costs, and exit non-zero when a package is ungranted, when its contents changed, or when `vendor/` disagrees with `composer.lock` |
-| `pet audit -v` | show the same report with every changed path, and not the first 5 of a bucket |
-| `pet audit <package>` | show the content hash, the count of files, the size and the reviewable delta in buckets, with the source of each change; `--from` names the version to compare from |
-| `pet audit <package> -v` | show the same report with every changed path, and not the first 5 of a bucket |
-| `pet preview` | show what the next `composer update` changes, with the reviewable delta of each package and the source of each change, before `vendor/` is touched |
-| `pet preview -v` | show the same report with every changed path, and not the first 5 of a bucket |
-| `pet trust` | trust each installed package at the tree on disk, and make the ledger |
-| `pet trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `pet.json` |
+| `porto audit` | show what is unaudited, worst first, with the reviewable delta of each package, the source of each change and the count of files that each review costs, and exit non-zero when a package is ungranted, when its contents changed, or when `vendor/` disagrees with `composer.lock` |
+| `porto audit -v` | show the same report with every changed path, and not the first 5 of a bucket |
+| `porto audit <package>` | show the content hash, the count of files, the size and the reviewable delta in buckets, with the source of each change; `--from` names the version to compare from |
+| `porto audit <package> -v` | show the same report with every changed path, and not the first 5 of a bucket |
+| `porto preview` | show what the next `composer update` changes, with the reviewable delta of each package and the source of each change, before `vendor/` is touched |
+| `porto preview -v` | show the same report with every changed path, and not the first 5 of a bucket |
+| `porto trust` | trust each installed package at the tree on disk, and make the ledger |
+| `porto trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `porto.json` |
 
-`pet` with no argument runs `pet audit`.
+`porto` with no argument runs `porto audit`.
 
 <a name="the-ledger"></a>
 ## The Ledger
 
-The ledger lives in `pet.json`, at the root of your project, next to `composer.json`. You should commit it. It holds one entry for each package: the version you reviewed, and the hash of the tree you reviewed.
+The ledger lives in `porto.json`, at the root of your project, next to `composer.json`. You should commit it. It holds one entry for each package: the version you reviewed, and the hash of the tree you reviewed.
 
 ```json
 {
@@ -350,18 +350,18 @@ The ledger lives in `pet.json`, at the root of your project, next to `composer.j
 The packages are ordered and each entry is two lines, so the `git diff` of a `composer update` is the review itself.
 
 > [!NOTE]
-> The hash covers every file of the installed tree, sorted by path. A tree installed with `--prefer-source` hashes differently from the same version installed from a dist archive, and pet says so in the report.
+> The hash covers every file of the installed tree, sorted by path. A tree installed with `--prefer-source` hashes differently from the same version installed from a dist archive, and porto says so in the report.
 
 <a name="continuous-integration"></a>
 ## Continuous Integration
 
-Because `pet audit` exits with a non-zero status code while a package is unread, you may add it to the test script of your project:
+Because `porto audit` exits with a non-zero status code while a package is unread, you may add it to the test script of your project:
 
 ```json
 {
     "scripts": {
         "test": [
-            "pet audit",
+            "porto audit",
             "pest"
         ]
     }
@@ -395,7 +395,7 @@ jobs:
         run: composer install --prefer-dist --no-interaction
 
       - name: Audit dependencies
-        run: ./vendor/bin/pet audit
+        run: ./vendor/bin/porto audit
 ```
 
 The job fails when a dependency arrives without a review, and names the package, what changed, and the number of files the review costs.
@@ -412,4 +412,4 @@ The job fails when a dependency arrives without a review, and names the package,
 
 ## License
 
-**pet** was created by **[Nuno Maduro](https://twitter.com/enunomaduro)** under the **[MIT license](https://opensource.org/licenses/MIT)**.
+**porto** was created by **[Nuno Maduro](https://twitter.com/enunomaduro)** under the **[MIT license](https://opensource.org/licenses/MIT)**.

@@ -164,7 +164,7 @@ it('names the installed package list that the project holds no', function (): vo
 });
 
 it('fails on a directory that holds no composer.json', function (): void {
-    $directory = sys_get_temp_dir().'/pet-'.bin2hex(random_bytes(6));
+    $directory = sys_get_temp_dir().'/porto-'.bin2hex(random_bytes(6));
 
     mkdir($directory, 0o777, true);
 

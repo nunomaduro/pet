@@ -42,7 +42,7 @@ final readonly class TreeHash implements Stringable
         [$algorithm, $digest] = $parts;
 
         if ($algorithm !== self::ALGORITHM) {
-            throw new Failure(sprintf('Unknown tree hash algorithm [%s]; this build of pet understands [%s].', $algorithm, self::ALGORITHM));
+            throw new Failure(sprintf('Unknown tree hash algorithm [%s]; this build of porto understands [%s].', $algorithm, self::ALGORITHM));
         }
 
         if (preg_match('/^[0-9a-f]{'.self::LENGTH.'}$/', $digest) !== 1) {

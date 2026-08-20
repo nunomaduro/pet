@@ -7,7 +7,7 @@ namespace App\Commands;
 use App\Delta\Delta;
 use App\Delta\DeltaResolver;
 use App\Exceptions\ComposerFailed;
-use App\Exceptions\PetException;
+use App\Exceptions\PortoException;
 use App\Ledger\Ledger;
 use App\Lock\InstalledRepository;
 use App\Lock\Project;
@@ -51,8 +51,8 @@ final class PreviewCommand extends Command
             $this->newLine();
 
             return self::FAILURE;
-        } catch (PetException $petException) {
-            $this->components->error($petException->getMessage());
+        } catch (PortoException $portoException) {
+            $this->components->error($portoException->getMessage());
 
             return self::FAILURE;
         }
@@ -153,11 +153,11 @@ final class PreviewCommand extends Command
 
         $this->newLine();
         $this->components->info($this->output->isVerbose()
-            ? sprintf('%d package(s) change. Run `composer update`, then record them with `pet trust`.', count($reviews))
+            ? sprintf('%d package(s) change. Run `composer update`, then record them with `porto trust`.', count($reviews))
             : sprintf(
                 '%d package(s) change. Read every change with `%s`, then run `composer update`.',
                 count($reviews),
-                Invitation::verbose('pet preview -v'),
+                Invitation::verbose('porto preview -v'),
             ));
 
         return self::SUCCESS;

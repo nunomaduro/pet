@@ -6,7 +6,7 @@ namespace App\Composer;
 
 final readonly class Gate
 {
-    public const string ENVIRONMENT = 'PET_INSIDE_COMPOSER';
+    public const string ENVIRONMENT = 'PORTO_INSIDE_COMPOSER';
 
     public function __construct(
         public string $rootPath,
@@ -15,7 +15,7 @@ final readonly class Gate
 
     public function binary(): ?string
     {
-        foreach ([$this->binDir.'/pet', $this->rootPath.'/pet'] as $candidate) {
+        foreach ([$this->binDir.'/porto', $this->rootPath.'/porto'] as $candidate) {
             if (is_file($candidate)) {
                 return $candidate;
             }
@@ -26,7 +26,7 @@ final readonly class Gate
 
     public function hasLedger(): bool
     {
-        return is_file($this->rootPath.'/pet.json');
+        return is_file($this->rootPath.'/porto.json');
     }
 
     /**
@@ -67,6 +67,6 @@ final readonly class Gate
             return null;
         }
 
-        return 'pet has no ledger in this project yet. Run `pet trust` to record what you trust today.';
+        return 'porto has no ledger in this project yet. Run `porto trust` to record what you trust today.';
     }
 }

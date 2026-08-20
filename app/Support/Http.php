@@ -17,7 +17,7 @@ final readonly class Http
 
     public static function default(): self
     {
-        return new self('pet (+https://github.com/nunomaduro/pet)', self::discoverGithubToken());
+        return new self('porto (+https://github.com/nunomaduro/porto)', self::discoverGithubToken());
     }
 
     public function get(string $url): string
@@ -66,7 +66,7 @@ final readonly class Http
 
     private static function discoverGithubToken(): ?string
     {
-        foreach (['PET_GITHUB_TOKEN', 'GITHUB_TOKEN', 'GH_TOKEN'] as $variable) {
+        foreach (['PORTO_GITHUB_TOKEN', 'GITHUB_TOKEN', 'GH_TOKEN'] as $variable) {
             $value = getenv($variable);
 
             if (is_string($value) && $value !== '') {

@@ -74,8 +74,8 @@ final readonly class Project
         return $this->vendorPath().'/composer/installed.json';
     }
 
-    public function petFilePath(): string
+    public function portoFilePath(): string
     {
-        return $this->rootPath.'/pet.json';
+        return $this->rootPath.'/porto.json';
     }
 }
