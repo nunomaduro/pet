@@ -130,8 +130,8 @@ final class AuditCommand extends Command
             $b->package,
         ]);
 
-        $this->bucketOption();
-        $plan = PlanComposerUpdate::default()->handle($project->rootPath);
+        $renderer = new RenderDelta($this->output);
+        $bucket = $this->bucketOption();
 
         if ($this->option('json') === true) {
             $this->output->write(Json::encode([

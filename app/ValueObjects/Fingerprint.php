@@ -9,13 +9,13 @@ use App\Enums\InstallSourceType;
 final readonly class Fingerprint
 {
     public function __construct(
-        public string            $package,
-        public string            $version,
+        public string $package,
+        public string $version,
         public InstallSourceType $source,
-        public TreeHash          $hash,
-        public string            $path,
-        public int               $files,
-        public int               $bytes,
+        public TreeHash $hash,
+        public string $path,
+        public int $files,
+        public int $bytes,
     ) {}
 
     public function key(): string

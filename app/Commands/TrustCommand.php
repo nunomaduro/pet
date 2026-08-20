@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
-use App\ValueObjects\Delta;
+use App\Actions\AuditProject;
+use App\Actions\RenderDelta;
 use App\Actions\ResolveDelta;
 use App\Enums\AuditStatus;
 use App\Exceptions\FailureException;
 use App\Exceptions\PortoException;
-use App\ValueObjects\TreeHash;
-use App\Actions\AuditProject;
+use App\ValueObjects\ComposerOperation;
+use App\ValueObjects\Delta;
 use App\ValueObjects\Grant;
 use App\ValueObjects\PackageAudit;
 use App\ValueObjects\Project;
-use App\ValueObjects\ComposerOperation;
-use App\Actions\RenderDelta;
+use App\ValueObjects\TreeHash;
 
 final class TrustCommand extends Command
 {

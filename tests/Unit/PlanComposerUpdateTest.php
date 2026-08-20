@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Exceptions\ComposerFailedException;
 use App\Actions\PlanComposerUpdate;
+use App\Exceptions\ComposerFailedException;
 
 it('fails when composer is not on the path', function (): void {
     (new PlanComposerUpdate('composer-that-is-not-installed'))->handle(__DIR__);

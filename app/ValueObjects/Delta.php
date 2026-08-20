@@ -14,16 +14,16 @@ final readonly class Delta
      * @param  array<int, string>  $notes  caveats about what was actually compared
      */
     public function __construct(
-        public string            $package,
-        public string            $from,
-        public string            $to,
-        public TreeHash          $fromHash,
-        public TreeHash          $toHash,
+        public string $package,
+        public string $from,
+        public string $to,
+        public TreeHash $fromHash,
+        public TreeHash $toHash,
         public InstallSourceType $source,
-        private array            $changes,
-        public ?ManifestChange   $manifestChange,
-        public bool              $toIsLocalInstall = false,
-        public array             $notes = [],
+        private array $changes,
+        public ?ManifestChange $manifestChange,
+        public bool $toIsLocalInstall = false,
+        public array $notes = [],
     ) {}
 
     /**
