@@ -25,7 +25,7 @@ final readonly class Gate
         return null;
     }
 
-    public function hasLedger(): bool
+    public function hasTrustFile(): bool
     {
         return is_file($this->rootPath.'/porto.json');
     }
@@ -44,7 +44,7 @@ final readonly class Gate
     {
         $binary = $this->binary();
 
-        if ($binary === null || ! $this->hasLedger()) {
+        if ($binary === null || ! $this->hasTrustFile()) {
             return null;
         }
 
@@ -103,16 +103,16 @@ final readonly class Gate
 
     public function baselineNotice(): ?string
     {
-        if ($this->binary() === null || $this->hasLedger()) {
+        if ($this->binary() === null || $this->hasTrustFile()) {
             return null;
         }
 
-        return 'porto has no ledger in this project yet. Run `porto trust` to record what you trust today.';
+        return 'porto has no trust file in this project yet. Run `porto trust` to record what you trust today.';
     }
 
     public function firstInstallNotice(): ?string
     {
-        if ($this->binary() === null || ! $this->hasLedger() || $this->hasInstalledTree()) {
+        if ($this->binary() === null || ! $this->hasTrustFile() || $this->hasInstalledTree()) {
             return null;
         }
 

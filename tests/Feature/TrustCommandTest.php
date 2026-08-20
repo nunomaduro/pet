@@ -12,7 +12,7 @@ it('records the review of one package, and turns the gate green', function (): v
         $trusted = Artisan::call('trust', ['packages' => ['acme/widget'], '--path' => $fixture->rootPath]);
         $trustOutput = Artisan::output();
 
-        $ledger = $fixture->read('porto.json');
+        $trustFile = $fixture->read('porto.json');
 
         $audited = Artisan::call('audit', ['--path' => $fixture->rootPath]);
         $auditOutput = Artisan::output();
@@ -26,12 +26,12 @@ it('records the review of one package, and turns the gate green', function (): v
         ->toContain('bytes changed')
         ->toContain('~ src/Widget.php')
         ->toContain('Recorded acme/widget 2.0.0')
-        ->and($ledger)->toContain('"version": "2.0.0"')
+        ->and($trustFile)->toContain('"version": "2.0.0"')
         ->and($audited)->toBe(0)
         ->and($auditOutput)->toContain('All 1 packages are covered.');
 });
 
-it('baselines every installed package of a project that holds no ledger', function (): void {
+it('baselines every installed package of a project that holds no trust file', function (): void {
     $fixture = Fixture::open('stale-project');
 
     unlink($fixture->path('porto.json'));

@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use App\Enums\ComposerChangeType;
-use App\Lock\InstalledRepository;
-use App\Lock\LockFile;
-use App\Lock\Project;
-use App\Support\ComposerPlan;
+use App\ValueObjects\InstalledRepository;
+use App\ValueObjects\LockFile;
+use App\ValueObjects\Project;
+use App\ValueObjects\ComposerPlan;
 use Tests\Fixture;
 use Tests\PendingUpdate;
 

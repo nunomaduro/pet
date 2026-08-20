@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use App\Identity\Manifest;
+use App\ValueObjects\Manifest;
 use App\Support\Json;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
@@ -38,7 +38,7 @@ final readonly class StaleProject
         $project->seedMetadata();
         $project->seedInstalledTree();
         $project->seedComposerFiles();
-        $project->seedLedger();
+        $project->seedTrustFile();
 
         putenv('PORTO_CACHE_DIR='.$project->cachePath);
 
@@ -194,7 +194,7 @@ final readonly class StaleProject
         ]));
     }
 
-    private function seedLedger(): void
+    private function seedTrustFile(): void
     {
         $hash = Manifest::ofDirectory($this->grantedTreePath())->hash();
 

@@ -3,19 +3,15 @@
 declare(strict_types=1);
 
 $core = [
-    'App\Delta',
     'App\Enums',
     'App\Exceptions',
-    'App\Identity',
-    'App\Ledger',
-    'App\Lock',
-    'App\Registry',
+    'App\ValueObjects',
 ];
 
-arch('core is dependency-free')
+arch('the data holds no dependency')
     /** @phpstan-ignore method.notFound */
     ->expect($core)
-    ->toOnlyUse([...$core, 'App\Support']);
+    ->toOnlyUse([...$core, 'App\Actions', 'App\Support']);
 
 arch('exceptions carry the suffix')
     /** @phpstan-ignore method.notFound */

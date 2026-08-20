@@ -32,7 +32,7 @@ it('records the bytes of the next install, while vendor/ holds the old ones', fu
         $trusted = Artisan::call('trust', ['--path' => $project->rootPath]);
         $trustOutput = Artisan::output();
 
-        $ledger = $project->ledger();
+        $trustFile = $project->trustFile();
         $targetHash = $project->targetHash();
         $installed = (string) file_get_contents($project->installedFile());
 
@@ -46,7 +46,7 @@ it('records the bytes of the next install, while vendor/ holds the old ones', fu
 
     expect($trusted)->toBe(0)
         ->and($trustOutput)->toContain('Run `composer install` to write those bytes to vendor/.')
-        ->and($ledger)
+        ->and($trustFile)
         ->toContain('"version": "2.0.0"')
         ->toContain($targetHash)
         ->and($installed)->toContain("return 'widget';")

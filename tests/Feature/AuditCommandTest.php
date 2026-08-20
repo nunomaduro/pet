@@ -83,8 +83,8 @@ it('renders the source of each change of a stale project with -v', function (): 
         ->and(str_contains($output, 'OPAQUE BYTES'))->toBeFalse();
 });
 
-it('asks for a baseline when the project holds no ledger', function (): void {
-    $fixture = Fixture::open('no-ledger');
+it('asks for a baseline when the project holds no trust file', function (): void {
+    $fixture = Fixture::open('no-trust-file');
 
     try {
         $status = Artisan::call('audit', ['--path' => $fixture->rootPath]);
@@ -95,7 +95,7 @@ it('asks for a baseline when the project holds no ledger', function (): void {
 
     expect($status)->toBe(1)
         ->and($output)
-        ->toContain('No ledger yet')
+        ->toContain('No trust file yet')
         ->toContain('porto.json')
         ->toContain('acme/widget 1.0.0')
         ->toContain('acme/lint 1.0.0 (dev)')

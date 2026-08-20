@@ -27,7 +27,7 @@ it('prints no control character of a path that a package holds', function (): vo
 });
 
 it('prints no control character of a version that the lock file holds', function (): void {
-    $fixture = Fixture::open('no-ledger');
+    $fixture = Fixture::open('no-trust-file');
 
     foreach (['vendor/composer/installed.json', 'composer.lock'] as $file) {
         file_put_contents($fixture->path($file), str_replace(

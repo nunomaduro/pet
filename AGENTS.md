@@ -1,6 +1,6 @@
 # The project
 
-`porto` is a dependency audit ledger for PHP. `porto` records the bytes of each installed package that the user trusts, shows the reviewable delta between the version that the user trusted and the version that the user installed, and exits non-zero when a package in `composer.lock` is ungranted or when its bytes changed. Two users read the output: a PHP developer who reviews the dependencies of a project, and the CI job of that project.
+`porto` is a dependency audit trust file for PHP. `porto` records the bytes of each installed package that the user trusts, shows the reviewable delta between the version that the user trusted and the version that the user installed, and exits non-zero when a package in `composer.lock` is ungranted or when its bytes changed. Two users read the output: a PHP developer who reviews the dependencies of a project, and the CI job of that project.
 
 Install the dependencies with `composer install`. Run the program with `./porto`. Run the tests with `composer test` after the user approves the implementation, and see section 4.
 
@@ -10,17 +10,14 @@ Install the dependencies with `composer install`. Run the program with `./porto`
 |---|---|
 | `app/Commands` | the commands of the CLI: the input, the output and the flags |
 | `app/Providers` | the service registration of Laravel Zero |
-| `app/Identity` | the content identity of an installed tree |
-| `app/Lock` | the readers of `composer.lock` and of `vendor/composer/installed.json` |
-| `app/Registry` | the metadata of Packagist, the fetch of an archive and the extraction of an archive |
-| `app/Delta` | the difference between two trees, the classifier of a change and the unified diff |
-| `app/Ledger` | the read of `porto.json`, the write of `porto.json`, the entry and the audit decision |
+| `app/Actions` | the tasks of the audit engine: the hash of a tree, the fetch of an archive, the delta, the audit decision, the read of `porto.json` and the write of `porto.json` |
+| `app/ValueObjects` | the data of the audit engine: the tree, the package, the change, the entry and the trust file |
 | `app/Enums` | the enumerations of the audit engine |
 | `app/Exceptions` | the exceptions of the audit engine |
-| `app/Support` | the cache, the HTTP client, the JSON codec, the paths, the version constraints and the helpers of a command |
+| `app/Support` | the JSON codec, the paths, the size of a file, the safe print of the text of a package and the helpers of a command |
 | `bootstrap` and `config` | the configuration of Laravel Zero |
 | `tests` | the tests, which Pest runs |
-| `porto.json` | the ledger of this project |
+| `porto.json` | the trust file of this project |
 
 Audit this project with `./porto`, and record the result in `porto.json`.
 
@@ -76,9 +73,13 @@ When a library reads the text of a comment as data, such as the description of a
 
 A tool that writes a comment into a file that it owns keeps that comment. Do not delete it: the tool fails until it writes the comment again.
 
-Put each class under `app/` in the `App\` namespace. Put each enum under `app/Enums` in the `App\Enums` namespace, and declare an enum in no other namespace. Use Laravel Zero, Illuminate and Symfony in `app/Commands`, `app/Providers` and `app/Support` only. Each other namespace under `App\` is the audit engine and uses the audit engine alone. When you add a namespace to the engine, add its name to the `$core` list in `tests/Arch.php`, because the test reads that list and does not find the namespace without it.
+Put each class under `app/` in the `App\` namespace, and choose the namespace of a class by the kind of the class. Put a class that performs a task, that reaches the network, that reads the filesystem or that runs a process in `app/Actions`, and start the name of that class with a verb: `FetchArchive`, `BuildDelta`, `AuditProject`. Put a class that carries data in `app/ValueObjects`, and give it the name of the thing that it holds. Put a small helper that many namespaces call in `app/Support`. Put each enum under `app/Enums` in the `App\Enums` namespace, and declare an enum in no other namespace.
 
-Give a helper under `app/Support` the output of the command and let it build its own components: `$this->components` is protected on `Illuminate\Console\Concerns\InteractsWithIO`, thus a helper cannot read it. `App\Support\DeltaRenderer` takes an `Illuminate\Console\OutputStyle` and makes an `App\Support\ControlSafeComponents` of it.
+Name the work method of an action `handle()` when the action holds one job, and keep a name for each method when the action holds more than one: `FetchArchive::handle()` fetches, and `RequestUrl` keeps `get()` and `download()`.
+
+Use Laravel Zero, Illuminate and Symfony in `app/Commands`, `app/Providers`, `app/Actions` and `app/Support` only. `app/Enums`, `app/Exceptions` and `app/ValueObjects` hold the data of the audit engine and reach no framework: the `$core` list in `tests/Arch.php` names those three namespaces, thus a namespace that the list does not name reaches anything.
+
+Give a class that prints outside `app/Commands` the output of the command and let it build its own components: `$this->components` is protected on `Illuminate\Console\Concerns\InteractsWithIO`, thus that class cannot read it. `App\Actions\RenderDelta` takes an `Illuminate\Console\OutputStyle` and makes an `App\Support\ControlSafeComponents` of it.
 
 Print each text that a package holds through `App\Support\ControlSafe`, and make each components factory an `App\Support\ControlSafeComponents`. `App\Support\ControlSafeFormatter` cleans the text that `line()` and `writeln()` write, and a component reaches the formatter with its control characters already gone: Termwind parses the HTML of a component with `DOMDocument`, and libxml 2.9 deletes a control character that libxml 2.15 keeps.
 
@@ -126,28 +127,28 @@ Install the dependencies of CI with `composer install`, and run no `composer upd
 | `porto audit <package> -v` | show the same report with every changed path, and not the first 5 of a bucket |
 | `porto preview` | show what the next `composer update` changes, with the reviewable delta of each package and the source of each change, before `vendor/` is touched |
 | `porto preview -v` | show the same report with every changed path, and not the first 5 of a bucket |
-| `porto trust` | trust each package that `porto audit` reports, at the tree on disk and at the tree of each pending install, and make the ledger |
+| `porto trust` | trust each package that `porto audit` reports, at the tree on disk and at the tree of each pending install, and make the trust file |
 | `porto trust <package> …` | show the delta of each package that the user names, and write the entry of each one in `porto.json` |
 
 `porto` with no argument runs `porto audit`. `porto audit` and `porto preview` write the same report as JSON with the `--json` option.
 
-Audit two subjects in each command: the tree that `vendor/` holds, and the tree that composer is about to write. A package that `composer.lock` names and `vendor/` holds at that version is `installed`, and `App\Ledger\Auditor` hashes the bytes on disk. A package that `composer.lock` names at a version that `vendor/` does not hold is `pending`, and the auditor fetches the dist archive of that version and hashes it. `App\Enums\PackageStatus` holds the two cases.
+Audit two subjects in each command: the tree that `vendor/` holds, and the tree that composer is about to write. A package that `composer.lock` names and `vendor/` holds at that version is `installed`, and `App\Actions\AuditProject` hashes the bytes on disk. A package that `composer.lock` names at a version that `vendor/` does not hold is `pending`, and the auditor fetches the dist archive of that version and hashes it. `App\Enums\PackageStatus` holds the two cases.
 
-Read the operations of composer from the `--plan` file when the plugin gives one, and derive them from `composer.lock` against `vendor/composer/installed.json` in each other run. `App\Support\ComposerPlan::fromFile()` reads the file and `ComposerPlan::between()` derives them. `ComposerPlan::explains()` separates the two: a plan that composer wrote explains why `vendor/` disagrees with the lock file, thus `lockDiscrepancies()` reports no disagreement for a package that such a plan names. A plan that porto derived explains nothing, thus the disagreement stays an error and a job of CI that never ran `composer install` still fails.
+Read the operations of composer from the `--plan` file when the plugin gives one, and derive them from `composer.lock` against `vendor/composer/installed.json` in each other run. `App\ValueObjects\ComposerPlan::fromFile()` reads the file and `ComposerPlan::between()` derives them. `ComposerPlan::explains()` separates the two: a plan that composer wrote explains why `vendor/` disagrees with the lock file, thus `lockDiscrepancies()` reports no disagreement for a package that such a plan names. A plan that porto derived explains nothing, thus the disagreement stays an error and a job of CI that never ran `composer install` still fails.
 
 Report a pending package that porto cannot fetch as `AuditStatus::Unknown`, and fail. A package with no dist URL, an unreachable repository and a fetch that fails each reach this case. `porto trust` refuses to record that package and names the reason: an audit that waves through the one package it could not read is worse than no gate.
 
-Record the bytes of the pending version in `porto trust`, and not the bytes on disk. The user reviews the tree that composer is about to write, thus the entry holds the hash of that tree and the `composer install` that follows writes bytes that the ledger already covers. Tell the user to run `composer install` after a run that recorded a pending package.
+Record the bytes of the pending version in `porto trust`, and not the bytes on disk. The user reviews the tree that composer is about to write, thus the entry holds the hash of that tree and the `composer install` that follows writes bytes that the trust file already covers. Tell the user to run `composer install` after a run that recorded a pending package.
 
-Compare a pending tree against the tree in `vendor/`, and reach no network for the metadata of that comparison. `App\Delta\DeltaResolver::incoming()` takes the target package and the installed package, thus the delta costs one archive and no request to Packagist. Take the dist URL and the dist reference of the target from the operation of composer first, from the entry of `composer.lock` second, and from Packagist last.
+Compare a pending tree against the tree in `vendor/`, and reach no network for the metadata of that comparison. `App\Actions\ResolveDelta::incoming()` takes the target package and the installed package, thus the delta costs one archive and no request to Packagist. Take the dist URL and the dist reference of the target from the operation of composer first, from the entry of `composer.lock` second, and from Packagist last.
 
 Show the delta of `porto audit <package>` from the `--from` option when the user gives one, and from the version in `porto.json` when that version is not the installed version. Fetch nothing in each other case, thus the report of a covered package stays local and instant.
 
-Print the source of each change in each report, and show the first 5 changed paths of each bucket. `-v` shows each changed path of each bucket, thus one command holds the review and no command points at a second command. `App\Support\DeltaRenderer` counts the paths that it does not show and invites `-v`.
+Print the source of each change in each report, and show the first 5 changed paths of each bucket. `-v` shows each changed path of each bucket, thus one command holds the review and no command points at a second command. `App\Actions\RenderDelta` counts the paths that it does not show and invites `-v`.
 
-Print the source of each change under the path of that change, and indent it. `App\Support\DeltaRenderer` owns that output, thus `porto audit` and `porto trust` print one format.
+Print the source of each change under the path of that change, and indent it. `App\Actions\RenderDelta` owns that output, thus `porto audit` and `porto trust` print one format.
 
-Fetch no archive for a package that `vendor/` holds in `porto trust` with no argument, and build no delta for it. That command makes the baseline of a project that holds no ledger, thus it records the bytes on disk of each package that `porto audit` reports, and a fetch of one archive for each package makes the command too slow to use. `porto trust` fetches the archive of each pending package, because the bytes of that package are not on disk and the count of those packages is the size of the update. `porto trust <package>` fetches the delta, because the user asks about one package.
+Fetch no archive for a package that `vendor/` holds in `porto trust` with no argument, and build no delta for it. That command makes the baseline of a project that holds no trust file, thus it records the bytes on disk of each package that `porto audit` reports, and a fetch of one archive for each package makes the command too slow to use. `porto trust` fetches the archive of each pending package, because the bytes of that package are not on disk and the count of those packages is the size of the update. `porto trust <package>` fetches the delta, because the user asks about one package.
 
 Make `porto trust` with no argument show each package with its status and the reason of that status, and record each one. The command asks nothing: section 4 holds the reason.
 
@@ -177,15 +178,15 @@ Keep this table and the command table of `README.md` equal.
 
 ## 6. The content identity
 
-Compute the identity of a package from the installed tree with `App\Identity\TreeHash`. Do not compute it from the metadata of Composer, because Composer records no digest of the bytes that Composer installed.
+Compute the identity of a package from the installed tree with `App\ValueObjects\TreeHash`. Do not compute it from the metadata of Composer, because Composer records no digest of the bytes that Composer installed.
 
 Hash the raw bytes of each file. Exclude no file. Sort the relative paths bytewise ascending. Do not normalize a line ending, a space or an encoding.
 
 Write one line for each file in the manifest: the `sha256` of the contents, two spaces, the relative path, and one `\n`. Take the `sha256` of the manifest, and record the first 32 hexadecimal characters of it after the prefix `tree-v1:`.
 
-Do not change the scheme `tree-v1`. Each audit in each ledger holds a hash of that scheme, thus a change to the scheme makes each audit invalid. Add a new prefix beside `tree-v1` instead.
+Do not change the scheme `tree-v1`. Each audit in each trust file holds a hash of that scheme, thus a change to the scheme makes each audit invalid. Add a new prefix beside `tree-v1` instead.
 
-Record no install source in the entry. A dist tree and a source tree of one version hash differently, thus the hash already separates them and a second field says the same thing again. When the hash of a tree that Composer installed with `--prefer-source` does not match the entry, `App\Ledger\PackageAudit` says that the tree came from `--prefer-source`. Keep that sentence: without it the user reads a byte change where the cause is the install source.
+Record no install source in the entry. A dist tree and a source tree of one version hash differently, thus the hash already separates them and a second field says the same thing again. When the hash of a tree that Composer installed with `--prefer-source` does not match the entry, `App\ValueObjects\PackageAudit` says that the tree came from `--prefer-source`. Keep that sentence: without it the user reads a byte change where the cause is the install source.
 
 When Packagist publishes an immutable artifact with a provenance attestation, add that digest beside `tree-v1`, and keep `tree-v1`.
 
@@ -193,12 +194,12 @@ When Packagist publishes an immutable artifact with a provenance attestation, ad
 
 ## 7. The bucket of a change
 
-`App\Delta\Classifier` puts each changed path in one case of `App\Delta\Bucket`.
+`App\Actions\ClassifyPath` puts each changed path in one case of `App\Enums\BucketType`.
 
 | Case | The path that it matches | The reviewer |
 |---|---|---|
 | `InstallManifest` | `composer.json`, and thus `scripts`, `bin`, the class of a plugin and `autoload` | a person, first of all |
-| `Opaque` | an extension in `OPAQUE_EXTENSIONS` of `App\Delta\Classifier`, and each file that holds no readable source | nobody |
+| `Opaque` | an extension in `OPAQUE_EXTENSIONS` of `App\Actions\ClassifyPath`, and each file that holds no readable source | nobody |
 | `RuntimeSource` | a path in a non-dev `autoload` root, in `files`, in `classmap` or in `bin` | a person |
 | `Inert` | each other path, for example `tests/`, `docs/`, `.github/` and a fixture | the machine |
 
@@ -212,29 +213,29 @@ Print no source of an `Opaque` change, and print the source of each other change
 
 ---
 
-## 8. The ledger
+## 8. The trust file
 
-Keep the ledger in `porto.json` at the root of the project. Use JSON, because PHP reads JSON in its core and Composer uses JSON.
+Keep the trust file in `porto.json` at the root of the project. Use JSON, because PHP reads JSON in its core and Composer uses JSON.
 
-Write one entry for each package: the `version` and the `hash` of the installed tree. Put an entry of a package that Composer installed as a dependency of the project in `require`, and an entry of a dev dependency in `require-dev`. `App\Ledger\Grant` holds one entry.
+Write one entry for each package: the `version` and the `hash` of the installed tree. Put an entry of a package that Composer installed as a dependency of the project in `require`, and an entry of a dev dependency in `require-dev`. `App\ValueObjects\Grant` holds one entry.
 
 Keep the `version` in the entry. Packagist addresses an archive by version and no package carries a digest of its dist, thus `porto audit <package>` cannot fetch the tree that the user reviewed from the hash alone.
 
 Write one entry for each package and overwrite that entry on each `porto trust`. Keep no history of a version that the project stopped using: git holds the history, and section 2 forbids a record of what the project stopped doing.
 
-`App\Ledger\Document` owns each read of `porto.json` and each write of `porto.json`. Do not read that file and do not write that file in a different class. `App\Ledger\Ledger` is a view on the document and touches no file.
+`App\Actions\PersistTrustFile` owns each read of `porto.json` and each write of `porto.json`. Do not read that file and do not write that file in a different class. `App\ValueObjects\TrustFile` is a view on that object and touches no file.
 
-Read the file again before each write and merge the sections, thus a writer never deletes a section that the writer does not own. `Ledger` owns `require` and `require-dev` and writes both in full.
+Read the file again before each write and merge the sections, thus a writer never deletes a section that the writer does not own. `TrustFile` owns `require` and `require-dev` and writes both in full.
 
 Order the packages of each section, thus a `git diff` of `porto.json` stays reviewable.
 
 Keep the `notes` of the entry when the user records a package again and gives no `--notes`. A grant that the user annotated keeps that sentence until the user replaces it.
 
-Make a `Grant` of many packages from the `App\Ledger\PackageAudit` that `App\Ledger\Auditor::report()` holds. That object carries the version, the hash, the dev flag, the count of files and the bytes of each package, thus a second call to `Fingerprinter::ofPackage()` hashes the tree one more time. `App\Commands\TrustCommand` records each grant and calls `save()` one time, after the loop.
+Make a `Grant` of many packages from the `App\ValueObjects\PackageAudit` that `App\Actions\AuditProject::report()` holds. That object carries the version, the hash, the dev flag, the count of files and the bytes of each package, thus a second call to `FingerprintPackage::ofPackage()` hashes the tree one more time. `App\Commands\TrustCommand` records each grant and calls `save()` one time, after the loop.
 
-Report a package as covered when the entry holds the hash of the installed tree. `App\Ledger\AuditStatus` names each other result: `Ungranted` when no entry exists, and `Changed` when the hash differs.
+Report a package as covered when the entry holds the hash of the installed tree. `App\Enums\AuditStatus` names each other result: `Ungranted` when no entry exists, and `Changed` when the hash differs.
 
-Raise the constant `SCHEMA` of `App\Ledger\Document` when you change the shape of a section, and write the message that tells the user what to do. Schema 1 recorded an audit under a criterion, schema 2 recorded a list of permissions, and `Document` tells the user to delete the file and run `porto trust` again.
+Raise the constant `SCHEMA` of `App\Actions\PersistTrustFile` when you change the shape of a section, and write the message that tells the user what to do. Schema 1 recorded an audit under a criterion, schema 2 recorded a list of permissions, and `PersistTrustFile` tells the user to delete the file and run `porto trust` again.
 
 Read `porto.json` for the shape of each section. The project audits itself, thus that file shows the current shape.
 
@@ -246,9 +247,9 @@ A prototype measured each item in this section against this repository on 2026-0
 
 No package carries a digest of its dist: 0 of 66 packages in `composer.lock` hold a `dist.shasum`, and an entry for a GitHub zipball holds the git reference and `"shasum": ""`. A GitHub zipball is not reproducible byte for byte, and `export-ignore` in `.gitattributes` makes the dist different from the tagged tree.
 
-A GitHub zipball holds each file under one directory with the name `vendor-package-<sha>`. `App\Registry\Zip` removes that common root. Hash no path that holds that root, or each path differs between two versions.
+A GitHub zipball holds each file under one directory with the name `vendor-package-<sha>`. `App\Actions\ExtractZip` removes that common root. Hash no path that holds that root, or each path differs between two versions.
 
-A GitHub zipball answers 403 to a request that carries no `User-Agent` header, and the prototype printed `runtime changes (0)` for that failure. `App\Support\Http` sends the header, and section 4 makes the failure fatal.
+A GitHub zipball answers 403 to a request that carries no `User-Agent` header, and the prototype printed `runtime changes (0)` for that failure. `App\Actions\RequestUrl` sends the header, and section 4 makes the failure fatal.
 
 `laravel/pint` ships no source in its dist. The dist holds `builds/`, `composer.json`, `LICENSE.md`, `overrides/` and `resources/`, and the psr-4 roots in `composer.json` point at directories that the dist does not hold. `builds/pint` executes, and that PHAR went from 23,815,394 bytes to 22,497,998 bytes between v1.30.4 and v1.30.5. Test a change of a rule of section 7 against this package.
 
@@ -270,9 +271,9 @@ Tell the user this after the gate stops a run: record the packages with `porto t
 
 Composer loads a plugin from the local repository alone. `PluginManager::loadInstalledPlugins()` calls `loadRepository($repo, false, $rootPackage)` and gives the root package to the filter of allowed plugins, thus composer never activates the plugin of the root package. `composer update` in this repository runs `./porto audit` through the script `post-update-cmd` of `composer.json` and does not run `App\Composer\Plugin`. To test the plugin by hand, make a project, add this repository as a `path` repository, and require `nunomaduro/porto` in it.
 
-The dist archive of a version and the tree that composer installs from it hash the same. A prototype trusted `psr/log` 3.0.2 from the fetched archive at `tree-v1:0f88d9371ba05c1791394f2e0a56979e` before the install, and `porto audit psr/log` read that same hash from `vendor/psr/log` after the install. `App\Registry\Zip` skips a directory entry and `App\Identity\Manifest` walks files alone, thus an empty directory that composer creates changes no hash. This holds for a dist install: a tree that composer clones with `--prefer-source` holds `.git` and hashes differently.
+The dist archive of a version and the tree that composer installs from it hash the same. A prototype trusted `psr/log` 3.0.2 from the fetched archive at `tree-v1:0f88d9371ba05c1791394f2e0a56979e` before the install, and `porto audit psr/log` read that same hash from `vendor/psr/log` after the install. `App\Actions\ExtractZip` skips a directory entry and `App\ValueObjects\Manifest` walks files alone, thus an empty directory that composer creates changes no hash. This holds for a dist install: a tree that composer clones with `--prefer-source` holds `.git` and hashes differently.
 
-The metadata of a package is at `https://repo.packagist.org/p2/<vendor>/<name>.json`. The array `packages.<name>` holds the newest version first, and each entry holds `version` and `dist.url`. `App\Registry\Packagist` reads this endpoint.
+The metadata of a package is at `https://repo.packagist.org/p2/<vendor>/<name>.json`. The array `packages.<name>` holds the newest version first, and each entry holds `version` and `dist.url`. `App\Actions\FetchPackageMetadata` reads this endpoint.
 
 Read the full tree, and add no cache for speed. A hash of 6,953 files and 91.2 MB in `vendor/` takes 0.85 s.
 
@@ -306,7 +307,7 @@ Do not write an entry of `config.policy`. The Composer plugin in `app/Composer` 
 
 Do not add the match of a tree against a subtree of a different package. `laravel/framework` declares `replace` for each `illuminate/*` package, thus Composer installs the monorepo or the split packages and never installs both, and the tree that the match reads is not in `vendor/`.
 
-Do not add the exchange of a ledger between two organizations. No publisher publishes an audit feed today. When a publisher exists, distribute the ledger as a Composer package, and not as a URL that the tool fetches, thus the ledger inherits a version and immutability.
+Do not add the exchange of a trust file between two organizations. No publisher publishes an audit feed today. When a publisher exists, distribute the trust file as a Composer package, and not as a URL that the tool fetches, thus the trust file inherits a version and immutability.
 
 Do not add the verification of a Sigstore signature or of a TUF signature. PHP has no mature library for this work.
 

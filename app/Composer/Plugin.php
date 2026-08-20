@@ -116,7 +116,7 @@ final class Plugin implements EventSubscriberInterface, PluginInterface
 
         if (! $process->isSuccessful()) {
             throw new ScriptExecutionException(
-                'porto found packages that your ledger does not cover.',
+                'porto found packages that your trust file does not cover.',
                 $process->getExitCode() ?? 1,
             );
         }

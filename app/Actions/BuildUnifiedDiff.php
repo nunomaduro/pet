@@ -1,0 +1,287 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions;
+
+final class BuildUnifiedDiff
+{
+    private const int MAX_EDIT_DISTANCE = 3000;
+
+    public static function handle(
+        ?string $old,
+        ?string $new,
+        string $oldLabel,
+        string $newLabel,
+        int $context = 3,
+    ): string {
+        $oldLines = self::lines($old);
+        $newLines = self::lines($new);
+
+        if ($oldLines === $newLines) {
+            return '';
+        }
+
+        $header = '--- '.$oldLabel."\n".'+++ '.$newLabel."\n";
+
+        $ops = self::diff($oldLines, $newLines);
+
+        if ($ops === null) {
+            return $header.sprintf(
+                "@@ file rewritten @@\n- %d line(s) replaced by %d line(s)\n",
+                count($oldLines),
+                count($newLines),
+            );
+        }
+
+        $hunks = self::hunks($ops, $context);
+
+        return $hunks === '' ? '' : $header.$hunks;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function lines(?string $content): array
+    {
+        if ($content === null || $content === '') {
+            return [];
+        }
+
+        $lines = explode("\n", $content);
+
+        if (end($lines) === '') {
+            array_pop($lines);
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @param  array<int, string>  $a
+     * @param  array<int, string>  $b
+     * @return array<int, array{0: '='|'-'|'+', 1: int, 2: int, 3: string}>|null
+     */
+    private static function diff(array $a, array $b): ?array
+    {
+        $n = count($a);
+        $m = count($b);
+
+        $prefix = 0;
+
+        while ($prefix < $n && $prefix < $m && $a[$prefix] === $b[$prefix]) {
+            $prefix++;
+        }
+
+        $suffix = 0;
+
+        while ($suffix < $n - $prefix && $suffix < $m - $prefix && $a[$n - 1 - $suffix] === $b[$m - 1 - $suffix]) {
+            $suffix++;
+        }
+
+        $middleA = array_slice($a, $prefix, $n - $prefix - $suffix);
+        $middleB = array_slice($b, $prefix, $m - $prefix - $suffix);
+
+        $middle = self::myers($middleA, $middleB);
+
+        if ($middle === null) {
+            return null;
+        }
+
+        $ops = [];
+
+        for ($i = 0; $i < $prefix; $i++) {
+            $ops[] = ['=', $i, $i, $a[$i]];
+        }
+
+        foreach ($middle as $op) {
+            $ops[] = [
+                $op[0],
+                $op[1] < 0 ? -1 : $op[1] + $prefix,
+                $op[2] < 0 ? -1 : $op[2] + $prefix,
+                $op[3],
+            ];
+        }
+
+        for ($i = 0; $i < $suffix; $i++) {
+            $ops[] = ['=', $n - $suffix + $i, $m - $suffix + $i, $a[$n - $suffix + $i]];
+        }
+
+        return $ops;
+    }
+
+    /**
+     * @param  array<int, string>  $a
+     * @param  array<int, string>  $b
+     * @return array<int, array{0: '='|'-'|'+', 1: int, 2: int, 3: string}>|null
+     */
+    private static function myers(array $a, array $b): ?array
+    {
+        $n = count($a);
+        $m = count($b);
+
+        if ($n === 0 && $m === 0) {
+            return [];
+        }
+
+        $max = min($n + $m, self::MAX_EDIT_DISTANCE);
+        $v = [1 => 0];
+        $trace = [];
+
+        for ($d = 0; $d <= $max; $d++) {
+            $trace[$d] = $v;
+
+            for ($k = -$d; $k <= $d; $k += 2) {
+                $down = $k === -$d || ($k !== $d && ($v[$k - 1] ?? 0) < ($v[$k + 1] ?? 0));
+
+                $x = $down ? ($v[$k + 1] ?? 0) : ($v[$k - 1] ?? 0) + 1;
+                $y = $x - $k;
+
+                while ($x < $n && $y < $m && $a[$x] === $b[$y]) {
+                    $x++;
+                    $y++;
+                }
+
+                $v[$k] = $x;
+
+                if ($x >= $n && $y >= $m) {
+                    return self::backtrack($trace, $a, $b, $d);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<int, array<int, int>>  $trace
+     * @param  array<int, string>  $a
+     * @param  array<int, string>  $b
+     * @return array<int, array{0: '='|'-'|'+', 1: int, 2: int, 3: string}>
+     */
+    private static function backtrack(array $trace, array $a, array $b, int $d): array
+    {
+        $ops = [];
+        $x = count($a);
+        $y = count($b);
+
+        for ($step = $d; $step > 0; $step--) {
+            $v = $trace[$step];
+            $k = $x - $y;
+
+            $down = $k === -$step || ($k !== $step && ($v[$k - 1] ?? 0) < ($v[$k + 1] ?? 0));
+            $previousK = $down ? $k + 1 : $k - 1;
+            $previousX = $v[$previousK] ?? 0;
+            $previousY = $previousX - $previousK;
+
+            while ($x > $previousX && $y > $previousY) {
+                $x--;
+                $y--;
+                $ops[] = ['=', $x, $y, $a[$x]];
+            }
+
+            if ($down) {
+                $y--;
+                $ops[] = ['+', -1, $y, $b[$y]];
+            } else {
+                $x--;
+                $ops[] = ['-', $x, -1, $a[$x]];
+            }
+        }
+
+        while ($x > 0 && $y > 0) {
+            $x--;
+            $y--;
+            $ops[] = ['=', $x, $y, $a[$x]];
+        }
+
+        return array_reverse($ops);
+    }
+
+    /**
+     * Groups the edit script into `@@` hunks with the given context.
+     *
+     * @param  array<int, array{0: '='|'-'|'+', 1: int, 2: int, 3: string}>  $ops
+     */
+    private static function hunks(array $ops, int $context): string
+    {
+        $changed = [];
+
+        foreach ($ops as $index => $op) {
+            if ($op[0] !== '=') {
+                $changed[] = $index;
+            }
+        }
+
+        if ($changed === []) {
+            return '';
+        }
+
+        $groups = [];
+        $start = $changed[0];
+        $end = $changed[0];
+
+        foreach (array_slice($changed, 1) as $index) {
+            if ($index - $end <= $context * 2) {
+                $end = $index;
+
+                continue;
+            }
+
+            $groups[] = [$start, $end];
+            $start = $index;
+            $end = $index;
+        }
+
+        $groups[] = [$start, $end];
+
+        $output = '';
+
+        foreach ($groups as [$from, $to]) {
+            $from = max(0, $from - $context);
+            $to = min(count($ops) - 1, $to + $context);
+
+            $oldStart = null;
+            $newStart = null;
+            $oldCount = 0;
+            $newCount = 0;
+            $body = '';
+
+            for ($i = $from; $i <= $to; $i++) {
+                [$op, $oldIndex, $newIndex, $line] = $ops[$i];
+
+                if ($oldIndex >= 0 && $oldStart === null) {
+                    $oldStart = $oldIndex;
+                }
+
+                if ($newIndex >= 0 && $newStart === null) {
+                    $newStart = $newIndex;
+                }
+
+                if ($op !== '+') {
+                    $oldCount++;
+                }
+
+                if ($op !== '-') {
+                    $newCount++;
+                }
+
+                $body .= match ($op) {
+                    '=' => ' ',
+                    '-' => '-',
+                    '+' => '+',
+                }.$line."\n";
+            }
+
+            $output .= sprintf(
+                "@@ -%d,%d +%d,%d @@\n",
+                $oldCount === 0 ? 0 : ($oldStart ?? 0) + 1,
+                $oldCount,
+                $newCount === 0 ? 0 : ($newStart ?? 0) + 1,
+                $newCount,
+            ).$body;
+        }
+
+        return $output;
+    }
+}

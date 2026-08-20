@@ -1,6 +1,6 @@
 {
     "name": "nunomaduro/porto",
-    "description": "A dependency audit ledger for PHP.",
+    "description": "A dependency audit trust file for PHP.",
     "keywords": ["supply chain", "audit", "composer", "security", "console", "cli"],
     "type": "composer-plugin",
     "license": "MIT",

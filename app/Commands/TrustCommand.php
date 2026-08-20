@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
-use App\Delta\Delta;
-use App\Delta\DeltaResolver;
+use App\ValueObjects\Delta;
+use App\Actions\ResolveDelta;
 use App\Enums\AuditStatus;
 use App\Exceptions\FailureException;
 use App\Exceptions\PortoException;
-use App\Identity\TreeHash;
-use App\Ledger\Auditor;
-use App\Ledger\Grant;
-use App\Ledger\PackageAudit;
-use App\Lock\Project;
-use App\Support\ComposerOperation;
-use App\Support\DeltaRenderer;
+use App\ValueObjects\TreeHash;
+use App\Actions\AuditProject;
+use App\ValueObjects\Grant;
+use App\ValueObjects\PackageAudit;
+use App\ValueObjects\Project;
+use App\ValueObjects\ComposerOperation;
+use App\Actions\RenderDelta;
 
 final class TrustCommand extends Command
 {
@@ -40,7 +40,7 @@ final class TrustCommand extends Command
 
         try {
             $project = Project::locate($path ?? (string) getcwd());
-            $auditor = Auditor::forProject($project);
+            $auditor = AuditProject::forProject($project);
         } catch (PortoException $portoException) {
             $this->components->error($portoException->getMessage());
 
@@ -54,7 +54,7 @@ final class TrustCommand extends Command
             : $this->trustPackages($project, $auditor, $packages);
     }
 
-    private function trustProject(Project $project, Auditor $auditor): int
+    private function trustProject(Project $project, AuditProject $auditor): int
     {
         if ($this->option('from') !== null) {
             $this->components->error('The --from option needs one package. Run `porto trust <package>`.');
@@ -83,16 +83,16 @@ final class TrustCommand extends Command
 
         $this->renderTargets($targets);
 
-        $created = ! $auditor->ledger->exists();
+        $created = ! $auditor->trustFile->exists();
         $unreadable = array_filter($targets, static fn (PackageAudit $audit): bool => ! $audit->hash instanceof TreeHash);
         $recorded = array_filter($targets, static fn (PackageAudit $audit): bool => $audit->hash instanceof TreeHash);
 
         try {
             foreach ($recorded as $audit) {
-                $auditor->ledger->record($this->grantOf($audit));
+                $auditor->trustFile->record($this->grantOf($audit));
             }
 
-            $auditor->ledger->save();
+            $auditor->trustFile->save();
         } catch (PortoException $portoException) {
             $this->components->error($portoException->getMessage());
 
@@ -104,7 +104,7 @@ final class TrustCommand extends Command
             ? sprintf(
                 'Trusted %d package(s), and wrote %s.',
                 count($recorded),
-                $this->relative($project->rootPath, $auditor->ledger->path),
+                $this->relative($project->rootPath, $auditor->trustFile->path),
             )
             : sprintf('Trusted %d package(s).', count($recorded)));
 
@@ -146,7 +146,7 @@ final class TrustCommand extends Command
     /**
      * @param  array<int, string>  $names
      */
-    private function trustPackages(Project $project, Auditor $auditor, array $names): int
+    private function trustPackages(Project $project, AuditProject $auditor, array $names): int
     {
         if (count($names) > 1 && $this->option('from') !== null) {
             $this->components->error('The --from option needs one package. Run `porto trust <package> --from=<version>`.');
@@ -189,7 +189,7 @@ final class TrustCommand extends Command
             $delta = $this->delta($auditor, $project, $audit);
 
             if ($delta instanceof Delta) {
-                (new DeltaRenderer($this->output))->report($delta);
+                (new RenderDelta($this->output))->report($delta);
             } else {
                 $this->newLine();
                 $this->components->warn(sprintf('Review the tree at %s before you trust it.', $audit->path ?? ''));
@@ -197,7 +197,7 @@ final class TrustCommand extends Command
 
             $grant = $this->grantOf($audit);
 
-            $auditor->ledger->record($grant);
+            $auditor->trustFile->record($grant);
 
             $recorded[$audit->package] = $audit;
         }
@@ -207,7 +207,7 @@ final class TrustCommand extends Command
         }
 
         try {
-            $auditor->ledger->save();
+            $auditor->trustFile->save();
         } catch (PortoException $portoException) {
             $this->components->error($portoException->getMessage());
 
@@ -264,7 +264,7 @@ final class TrustCommand extends Command
         return false;
     }
 
-    private function delta(Auditor $auditor, Project $project, PackageAudit $audit): ?Delta
+    private function delta(AuditProject $auditor, Project $project, PackageAudit $audit): ?Delta
     {
         $from = $this->option('from');
         assert($from === null || is_string($from));
@@ -280,7 +280,7 @@ final class TrustCommand extends Command
         }
 
         try {
-            return DeltaResolver::forProject($project)->resolve(
+            return ResolveDelta::forProject($project)->resolve(
                 package: $audit->package,
                 from: $from,
                 to: $audit->pending() ? $audit->version : null,
@@ -292,7 +292,7 @@ final class TrustCommand extends Command
         }
     }
 
-    private function incomingDelta(Project $project, Auditor $auditor, PackageAudit $audit): ?Delta
+    private function incomingDelta(Project $project, AuditProject $auditor, PackageAudit $audit): ?Delta
     {
         $operation = $auditor->plan()->of($audit->package);
 
@@ -303,7 +303,7 @@ final class TrustCommand extends Command
         $installed = $auditor->installed();
 
         try {
-            return DeltaResolver::forProject($project)->incoming(
+            return ResolveDelta::forProject($project)->incoming(
                 target: $auditor->target($operation, $audit->version, $audit->dev),
                 installed: $installed->has($audit->package) ? $installed->get($audit->package) : null,
             );

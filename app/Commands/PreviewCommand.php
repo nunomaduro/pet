@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
-use App\Delta\Delta;
-use App\Delta\DeltaResolver;
+use App\ValueObjects\Delta;
+use App\Actions\ResolveDelta;
 use App\Exceptions\ComposerFailedException;
 use App\Exceptions\PortoException;
-use App\Ledger\Ledger;
-use App\Lock\InstalledRepository;
-use App\Lock\Project;
-use App\Support\ComposerOperation;
-use App\Support\ComposerPlan;
-use App\Support\ComposerPlanner;
-use App\Support\DeltaRenderer;
+use App\ValueObjects\TrustFile;
+use App\ValueObjects\InstalledRepository;
+use App\ValueObjects\Project;
+use App\ValueObjects\ComposerOperation;
+use App\ValueObjects\ComposerPlan;
+use App\Actions\PlanComposerUpdate;
+use App\Actions\RenderDelta;
 use App\Support\Invitation;
 use App\Support\Json;
-use App\Support\PlannedReview;
+use App\ValueObjects\PlannedReview;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 final class PreviewCommand extends Command
@@ -42,7 +42,7 @@ final class PreviewCommand extends Command
 
         try {
             $project = Project::locate($path ?? (string) getcwd());
-            $plan = ComposerPlanner::default()->plan($project->rootPath);
+            $plan = PlanComposerUpdate::default()->handle($project->rootPath);
             $reviews = $this->reviews($project, $plan);
         } catch (ComposerFailedException $composerFailedException) {
             $this->components->error($composerFailedException->getMessage());
@@ -70,8 +70,8 @@ final class PreviewCommand extends Command
      */
     private function reviews(Project $project, ComposerPlan $plan): array
     {
-        $ledger = Ledger::forProject($project);
-        $resolver = DeltaResolver::forProject($project);
+        $trustFile = TrustFile::forProject($project);
+        $resolver = ResolveDelta::forProject($project);
         $installed = is_file($project->installedJsonPath())
             ? InstalledRepository::fromProject($project)
             : null;
@@ -79,7 +79,7 @@ final class PreviewCommand extends Command
         $reviews = [];
 
         foreach ($plan->operations as $operation) {
-            $trusted = $ledger->grantFor($operation->package)?->version;
+            $trusted = $trustFile->grantFor($operation->package)?->version;
 
             $reviews[] = new PlannedReview(
                 operation: $operation,
@@ -131,7 +131,7 @@ final class PreviewCommand extends Command
             return self::SUCCESS;
         }
 
-        $renderer = new DeltaRenderer($this->output);
+        $renderer = new RenderDelta($this->output);
 
         $this->line(sprintf('  <options=bold>to review</> <fg=gray>(%d, worst first)</>', count($reviews)));
         $this->newLine();
@@ -171,7 +171,7 @@ final class PreviewCommand extends Command
      */
     private function renderJson(array $reviews): int
     {
-        $renderer = new DeltaRenderer($this->output);
+        $renderer = new RenderDelta($this->output);
 
         $this->output->write(Json::encode([
             'operations' => count($reviews),

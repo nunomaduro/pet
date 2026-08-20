@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
-use App\Delta\Delta;
-use App\Delta\DeltaResolver;
+use App\ValueObjects\Delta;
+use App\Actions\ResolveDelta;
 use App\Enums\AuditStatus;
 use App\Exceptions\PortoException;
-use App\Ledger\Auditor;
-use App\Ledger\PackageAudit;
-use App\Lock\Project;
+use App\Actions\AuditProject;
+use App\ValueObjects\PackageAudit;
+use App\ValueObjects\Project;
 use App\Support\Bytes;
-use App\Support\ComposerOperation;
-use App\Support\ComposerPlan;
-use App\Support\DeltaRenderer;
+use App\ValueObjects\ComposerOperation;
+use App\ValueObjects\ComposerPlan;
+use App\Actions\RenderDelta;
 use App\Support\Invitation;
 use App\Support\Json;
 
@@ -102,7 +102,7 @@ final class AuditCommand extends Command
     private function auditProject(Project $project): int
     {
         try {
-            $auditor = Auditor::forProject($project, $this->plan(), $this->option('no-cache') !== true);
+            $auditor = AuditProject::forProject($project, $this->plan(), $this->option('no-cache') !== true);
 
             $discrepancies = $auditor->lockDiscrepancies();
             $report = $auditor->report();
@@ -129,7 +129,7 @@ final class AuditCommand extends Command
             $b->package,
         ]);
 
-        $renderer = new DeltaRenderer($this->output);
+        $renderer = new RenderDelta($this->output);
 
         if ($this->option('json') === true) {
             $this->output->write(Json::encode([
@@ -169,10 +169,10 @@ final class AuditCommand extends Command
             $this->components->error('The installed tree does not match composer.lock.');
         }
 
-        if (! $auditor->ledger->exists()) {
+        if (! $auditor->trustFile->exists()) {
             $this->components->warn(sprintf(
-                'No ledger yet. `porto trust` records every installed package in %s.',
-                $this->relative($project->rootPath, $auditor->ledger->path),
+                'No trust file yet. `porto trust` records every installed package in %s.',
+                $this->relative($project->rootPath, $auditor->trustFile->path),
             ));
             $this->newLine();
         }
@@ -257,7 +257,7 @@ final class AuditCommand extends Command
     private function auditPackage(Project $project, string $package): int
     {
         try {
-            $auditor = Auditor::forProject($project, $this->plan(), $this->option('no-cache') !== true);
+            $auditor = AuditProject::forProject($project, $this->plan(), $this->option('no-cache') !== true);
             $audit = $auditor->auditOfName($package);
         } catch (PortoException $portoException) {
             $this->components->error($portoException->getMessage());
@@ -266,7 +266,7 @@ final class AuditCommand extends Command
         }
 
         $requested = $this->option('from') !== null;
-        $renderer = new DeltaRenderer($this->output);
+        $renderer = new RenderDelta($this->output);
         $delta = null;
         $unresolved = null;
 
@@ -286,7 +286,7 @@ final class AuditCommand extends Command
             assert($to === null || is_string($to));
 
             try {
-                $delta = DeltaResolver::forProject($project)->resolve(
+                $delta = ResolveDelta::forProject($project)->resolve(
                     package: $audit->package,
                     from: $from,
                     to: $to ?? ($audit->pending() ? $audit->version : null),
@@ -374,7 +374,7 @@ final class AuditCommand extends Command
     /**
      * @return array{files: int, scope: string, delta: ?Delta}
      */
-    private function review(Project $project, Auditor $auditor, PackageAudit $audit): array
+    private function review(Project $project, AuditProject $auditor, PackageAudit $audit): array
     {
         if ($audit->status === AuditStatus::Unknown) {
             return ['files' => 0, 'scope' => 'not readable', 'delta' => null];
@@ -384,14 +384,14 @@ final class AuditCommand extends Command
             return $this->pendingReview($project, $auditor, $audit);
         }
 
-        $from = $auditor->ledger->grantFor($audit->package)?->version;
+        $from = $auditor->trustFile->grantFor($audit->package)?->version;
 
         if ($from === null) {
             return $this->wholePackage($audit);
         }
 
         try {
-            $delta = DeltaResolver::forProject($project)->resolve($audit->package, $from);
+            $delta = ResolveDelta::forProject($project)->resolve($audit->package, $from);
         } catch (PortoException) {
             return $this->wholePackage($audit);
         }
@@ -406,7 +406,7 @@ final class AuditCommand extends Command
     /**
      * @return array{files: int, scope: string, delta: ?Delta}
      */
-    private function pendingReview(Project $project, Auditor $auditor, PackageAudit $audit): array
+    private function pendingReview(Project $project, AuditProject $auditor, PackageAudit $audit): array
     {
         $delta = $this->incomingDelta($project, $auditor, $audit);
 
@@ -419,7 +419,7 @@ final class AuditCommand extends Command
             : $this->wholePackage($audit);
     }
 
-    private function incomingDelta(Project $project, Auditor $auditor, PackageAudit $audit): ?Delta
+    private function incomingDelta(Project $project, AuditProject $auditor, PackageAudit $audit): ?Delta
     {
         $operation = $auditor->plan()->of($audit->package);
 
@@ -430,7 +430,7 @@ final class AuditCommand extends Command
         $installed = $auditor->installed();
 
         try {
-            return DeltaResolver::forProject($project)->incoming(
+            return ResolveDelta::forProject($project)->incoming(
                 target: $auditor->target($operation, $audit->version, $audit->dev),
                 installed: $installed->has($audit->package) ? $installed->get($audit->package) : null,
                 useCache: $this->option('no-cache') !== true,

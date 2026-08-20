@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use App\Identity\Manifest;
+use App\ValueObjects\Manifest;
 use App\Support\Json;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
@@ -53,7 +53,7 @@ final readonly class PendingUpdate
         $project->seedInstalledTree();
         $project->seedComposerFiles();
         $project->lockAt(self::TRUSTED_VERSION, self::TRUSTED_REFERENCE);
-        $project->seedLedger();
+        $project->seedTrustFile();
         $project->seedComposer($plan, $exitCode);
 
         putenv('PORTO_CACHE_DIR='.$project->cachePath);
@@ -108,7 +108,7 @@ final readonly class PendingUpdate
         return (string) Manifest::ofDirectory($this->releasePath(self::TARGET_VERSION, self::TARGET_REFERENCE))->hash();
     }
 
-    public function ledger(): string
+    public function trustFile(): string
     {
         return (string) file_get_contents($this->rootPath.'/porto.json');
     }
@@ -276,7 +276,7 @@ final readonly class PendingUpdate
         ]));
     }
 
-    private function seedLedger(): void
+    private function seedTrustFile(): void
     {
         $hash = Manifest::ofDirectory($this->releasePath(self::TRUSTED_VERSION, self::TRUSTED_REFERENCE))->hash();
 
