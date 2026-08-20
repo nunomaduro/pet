@@ -115,7 +115,7 @@ final class Plugin implements EventSubscriberInterface, PluginInterface
         $process = new Process($command, $gate->rootPath, $gate->environment());
         $process->setTimeout(null);
         $process->run(static function (string $type, string $buffer) use ($io): void {
-            $io->write($buffer, false);
+            $io->writeRaw($buffer, false);
         });
 
         if (! $process->isSuccessful()) {
