@@ -149,39 +149,7 @@ The trust file lives in `porto.json`, at the root of your project, next to `comp
 <a name="continuous-integration"></a>
 ## Continuous Integration
 
-
-
-<a name="github-actions"></a>
-### GitHub Actions
-
-To audit your dependencies whenever new code is pushed to GitHub, create a `.github/workflows/audit.yml` file with the following content:
-
-```yaml
-name: Audit Dependencies
-
-on: [push]
-
-jobs:
-  audit:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.4
-
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction
-
-      - name: Audit dependencies
-        run: ./vendor/bin/porto audit
-```
-
-The job fails when a dependency arrives without a review, and names the package, what changed, and the number of files the review costs.
+Your build audits your dependencies the moment it installs them. porto ships a Composer plugin, and the plugin runs the audit after every `composer install`, and again before `composer update` writes anything into `vendor/`. There is no step to add.
 
 ## Follow Nuno
 

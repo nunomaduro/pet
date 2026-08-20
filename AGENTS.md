@@ -113,8 +113,6 @@ Grant no permission, and add no scan that reads the code of a package. The user 
 
 Stop after you change a file of source code, name each file that you changed, and ask the user if the implementation is correct. Run `composer test` after the user answers yes, and run no test and no part of a test before that answer. When the user answers no, change the code and ask again. The command runs `rector process --dry-run`, `pint --test`, `./porto audit`, `phpstan analyse` and `pest --parallel`. The workflow `.github/workflows/tests.yml` runs the same steps on PHP 8.3, PHP 8.4 and PHP 8.5.
 
-Install the dependencies of CI with `composer install`, and run no `composer update` in a job. `composer test` runs the gate `./porto audit`, thus a job that resolves a different tree reports a package that `porto.json` does not cover and fails on a change that the commit does not hold.
-
 ---
 
 ## 5. The commands
@@ -160,23 +158,37 @@ List each package that needs review, and add no option that limits the count. `p
 
 Reject `--from` in `porto trust` with no package, and in `porto trust` with more than one package. That option asks about one package, thus the command names the option and tells the user to give one package.
 
-Make `porto audit` the gate of CI and the gate of composer: the command prints the report and exits non-zero when a package is ungranted, when its bytes changed, when porto cannot read the bytes of a pending package, or when the tree in `vendor/` disagrees with `composer.lock`. `composer test` runs the gate as the script `test:dependencies`, thus a change that breaks the gate breaks the test suite.
-
-Run the gate of composer before composer writes `vendor/`. `App\Composer\Plugin` subscribes `InstallerEvents::PRE_OPERATIONS_EXEC`, writes the operations of the transaction to a plan file with `Gate::writePlan()`, runs `porto audit --plan=<file>`, and throws `ScriptExecutionException` when that run fails. Composer stops and writes no file of a package. The plugin keeps `ScriptEvents::POST_UPDATE_CMD` and `ScriptEvents::POST_INSTALL_CMD` too: that run reads the bytes on disk, costs no request and proves that the tree that landed is the tree that the user trusted. It also covers the first install of a project, which the gate skips.
-
-Skip the gate of composer in three cases: a run that executes no operation (`InstallerEvent::isExecutingOperations()` is false, thus `--dry-run` writes nothing), a run inside a composer that porto started (`Gate::nested()` reads `PORTO_INSIDE_COMPOSER`, thus `porto preview` does not call itself), and a project that holds no `vendor/composer/installed.json`. The third case is the first install of a project: porto audits an update against the installed tree, thus that run has no tree to audit against and the hook of `POST_UPDATE_CMD` reports the result. `Gate::firstInstallNotice()` says this to the user.
-
 Exit non-zero from `porto audit <package>` when that package is ungranted or when its bytes changed. One rule holds for the two forms of the command, thus a script gates on one package.
 
 Compare `vendor/` against `composer.lock` in each run of `porto audit` with no package, and add no option for it. The read of `composer.lock` costs one file, and a report of a tree that disagrees with the lock file names a version that the user did not install.
-
-Keep the count of files to review in the gate, thus a failing job of CI names the cost of each review. The gate fetches one archive for a package that changed, and reports the whole package when that fetch fails.
 
 Keep this table and the command table of `README.md` equal.
 
 ---
 
-## 6. The content identity
+## 6. The gate of composer and the job of CI
+
+Make `porto audit` the gate of CI and the gate of composer: the command prints the report and exits non-zero when a package is ungranted, when its bytes changed, when porto cannot read the bytes of a pending package, or when the tree in `vendor/` disagrees with `composer.lock`. `composer test` runs the gate as the script `test:dependencies`, thus a change that breaks the gate breaks the test suite.
+
+Run the gate of composer before composer writes `vendor/`. `App\Composer\Plugin` subscribes `InstallerEvents::PRE_OPERATIONS_EXEC`, writes the operations of the transaction to a plan file with `Gate::writePlan()`, runs `porto audit --plan=<file>`, and throws `ScriptExecutionException` when that run fails. Composer stops and writes no file of a package. The plugin keeps `ScriptEvents::POST_UPDATE_CMD` and `ScriptEvents::POST_INSTALL_CMD` too: that run reads the bytes on disk, costs no request and proves that the tree that landed is the tree that the user trusted. It also covers the first install of a project, which the gate skips.
+
+Run the gate in `composer install` and in `composer update`, and add no step of CI for the audit. `Installer::run()` of composer calls `doUpdate()` for an update and calls `doInstall()` for an install, `doUpdate()` calls `doInstall()` too, and `doInstall()` dispatches `InstallerEvents::PRE_OPERATIONS_EXEC`, thus the two commands reach `App\Composer\Plugin::gate()`. `Application::doRun()` of composer returns the code of `ScriptExecutionException`, thus the command that the job ran exits non-zero and the job fails.
+
+Skip the gate of composer in three cases: a run that executes no operation (`InstallerEvent::isExecutingOperations()` is false, thus `--dry-run` writes nothing), a run inside a composer that porto started (`Gate::nested()` reads `PORTO_INSIDE_COMPOSER`, thus `porto preview` does not call itself), and a project that holds no `vendor/composer/installed.json`. The third case is the first install of a project: porto audits an update against the installed tree, thus that run has no tree to audit against and the hook of `POST_UPDATE_CMD` reports the result. `Gate::firstInstallNotice()` says this to the user.
+
+Audit the fresh checkout of a job at `ScriptEvents::POST_INSTALL_CMD`, and audit it at no earlier event. A job checks out the project and holds no `vendor/`, thus composer installs the plugin after it dispatched `PRE_OPERATIONS_EXEC` and no listener answers that event. `PluginInstaller::install()` calls `PluginManager::registerPackage()` while composer executes the operations, thus the plugin is active at `POST_INSTALL_CMD` and `App\Composer\Plugin::audit()` reads the bytes that the job installed.
+
+Tell the user to write `nunomaduro/porto` in `config.allow-plugins` of `composer.json` and to commit that line. `PluginManager::isPluginAllowed()` asks the user about a plugin that the list does not name, and throws `PluginBlockedException` when the run reads no terminal, thus a job of CI stops before composer installs one package.
+
+Tell the user to run `vendor/bin/porto audit` as a step of the job in three cases, because composer runs the plugin in none of them: a run with `--no-plugins`, a run with `--no-scripts`, and a run as root that reads no terminal and that holds no `COMPOSER_ALLOW_SUPERUSER=1`. `--no-scripts` keeps `PRE_OPERATIONS_EXEC` and skips `POST_INSTALL_CMD`, thus a fresh checkout gets no audit.
+
+Install the dependencies of CI with `composer install`, and run no `composer update` in a job. `composer test` runs the gate `./porto audit`, thus a job that resolves a different tree reports a package that `porto.json` does not cover and fails on a change that the commit does not hold.
+
+Keep the count of files to review in the gate, thus a failing job of CI names the cost of each review. The gate fetches one archive for a package that changed, and reports the whole package when that fetch fails.
+
+---
+
+## 7. The content identity
 
 Compute the identity of a package from the installed tree with `App\ValueObjects\TreeHash`. Do not compute it from the metadata of Composer, because Composer records no digest of the bytes that Composer installed.
 
@@ -192,7 +204,7 @@ When Packagist publishes an immutable artifact with a provenance attestation, ad
 
 ---
 
-## 7. The bucket of a change
+## 8. The bucket of a change
 
 `App\Actions\ClassifyPath` puts each changed path in one case of `App\Enums\BucketType`.
 
@@ -213,7 +225,7 @@ Print no source of an `Opaque` change, and print the source of each other change
 
 ---
 
-## 8. The trust file
+## 9. The trust file
 
 Keep the trust file in `porto.json` at the root of the project. Use JSON, because PHP reads JSON in its core and Composer uses JSON.
 
@@ -241,7 +253,7 @@ Read `porto.json` for the shape of each section. The project audits itself, thus
 
 ---
 
-## 9. Facts that you must not derive again
+## 10. Facts that you must not derive again
 
 A prototype measured each item in this section against this repository on 2026-08-13.
 
@@ -251,9 +263,9 @@ A GitHub zipball holds each file under one directory with the name `vendor-packa
 
 A GitHub zipball answers 403 to a request that carries no `User-Agent` header, and the prototype printed `runtime changes (0)` for that failure. `App\Actions\RequestUrl` sends the header, and section 4 makes the failure fatal.
 
-`laravel/pint` ships no source in its dist. The dist holds `builds/`, `composer.json`, `LICENSE.md`, `overrides/` and `resources/`, and the psr-4 roots in `composer.json` point at directories that the dist does not hold. `builds/pint` executes, and that PHAR went from 23,815,394 bytes to 22,497,998 bytes between v1.30.4 and v1.30.5. Test a change of a rule of section 7 against this package.
+`laravel/pint` ships no source in its dist. The dist holds `builds/`, `composer.json`, `LICENSE.md`, `overrides/` and `resources/`, and the psr-4 roots in `composer.json` point at directories that the dist does not hold. `builds/pint` executes, and that PHAR went from 23,815,394 bytes to 22,497,998 bytes between v1.30.4 and v1.30.5. Test a change of a rule of section 8 against this package.
 
-`phpstan/phpstan` ships `phpstan.phar` and 29 prebuilt `.so` files under `turbo-ext/`, one for each platform and each minor version of PHP. No `.so` file is in an `autoload` root. Test a change of a rule of section 7 against this package too.
+`phpstan/phpstan` ships `phpstan.phar` and 29 prebuilt `.so` files under `turbo-ext/`, one for each platform and each minor version of PHP. No `.so` file is in an `autoload` root. Test a change of a rule of section 8 against this package too.
 
 `symfony/var-dumper` changed `composer.json` alone between v7.4.14 and v7.4.15. This is the common delta.
 
@@ -267,6 +279,8 @@ PHPStan reads the `extra.phpstan.includes` of a package through `phpstan/extensi
 
 Composer 2.10.1 writes `composer.lock` in `Installer::doUpdate()` before it calls `doInstall()`, `doInstall()` dispatches `InstallerEvents::PRE_OPERATIONS_EXEC`, and `InstallationManager::execute()` writes `vendor/` after that event. Thus a plugin that throws at that event stops a run that already rewrote the lock file and that wrote no file of a package. `InstallerEvents` holds that one case: no later event of composer precedes the write.
 
+A prototype read the source of composer 2.10.1 for each item of this paragraph on 2026-08-20. `Installer::run()` calls `doInstall()` for `composer install` and calls `doUpdate()` for `composer update`, thus `InstallerEvents::PRE_OPERATIONS_EXEC` reaches the plugin in the two commands. `Installer::run()` guards `ScriptEvents::POST_INSTALL_CMD` and `ScriptEvents::POST_UPDATE_CMD` with the flag that `--no-scripts` clears, and guards `PRE_OPERATIONS_EXEC` with no flag, thus `--no-scripts` leaves the gate and removes the audit that reads the bytes on disk. `EventDispatcher::getListeners()` reads that same flag for a listener of the `scripts` of `composer.json` alone, thus `--no-scripts` keeps each listener of a plugin. `Application::doRun()` sets `--no-plugins` for a run as root that reads no terminal and that holds no `COMPOSER_ALLOW_SUPERUSER=1`, thus an image of Docker that runs as root needs that variable. `PluginManager::isPluginAllowed()` throws `PluginBlockedException` for a plugin that `config.allow-plugins` does not name when the run reads no terminal, and returns false with no exception when `extra.plugin-optional` of that package is true. `Application::doRun()` catches `ScriptExecutionException` and returns the code of it.
+
 Tell the user this after the gate stops a run: record the packages with `porto trust`, then run `composer install`. The lock file already names the new versions, thus `composer install` writes them and `git checkout composer.lock` abandons them.
 
 Composer loads a plugin from the local repository alone. `PluginManager::loadInstalledPlugins()` calls `loadRepository($repo, false, $rootPackage)` and gives the root package to the filter of allowed plugins, thus composer never activates the plugin of the root package. `composer update` in this repository runs `./porto audit` through the script `post-update-cmd` of `composer.json` and does not run `App\Composer\Plugin`. To test the plugin by hand, make a project, add this repository as a `path` repository, and require `nunomaduro/porto` in it.
@@ -279,7 +293,7 @@ Read the full tree, and add no cache for speed. A hash of 6,953 files and 91.2 M
 
 ---
 
-## 10. How to test a change by hand
+## 11. How to test a change by hand
 
 Run `./porto audit symfony/console` two times, and compare the two hashes: the hashes are equal. Change one byte of a file of that package in `vendor/`: the hash changes.
 
@@ -301,7 +315,7 @@ Test the gate of composer in a different project, because composer does not acti
 
 ---
 
-## 11. Out of scope
+## 12. Out of scope
 
 Do not write an entry of `config.policy`. The Composer plugin in `app/Composer` runs `porto audit` and writes no configuration of composer.
 
