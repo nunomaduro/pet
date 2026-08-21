@@ -11,19 +11,19 @@ use App\Enums\PackageStatus;
 final readonly class PackageAudit
 {
     public function __construct(
-        public string            $package,
-        public string            $version,
-        public ?TreeHash         $hash,
-        public bool              $dev,
-        public AuditStatus       $status,
-        public int               $files,
-        public int               $bytes,
-        public ?Grant            $grant = null,
+        public string $package,
+        public string $version,
+        public ?TreeHash $hash,
+        public bool $dev,
+        public AuditStatus $status,
+        public int $files,
+        public int $bytes,
+        public ?Grant $grant = null,
         public InstallSourceType $source = InstallSourceType::Dist,
-        public PackageStatus     $state = PackageStatus::Installed,
-        public ?string           $from = null,
-        public ?string           $cause = null,
-        public ?string           $path = null,
+        public PackageStatus $state = PackageStatus::Installed,
+        public ?string $from = null,
+        public ?string $cause = null,
+        public ?string $path = null,
     ) {}
 
     public function fails(): bool

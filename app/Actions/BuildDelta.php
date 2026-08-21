@@ -16,13 +16,13 @@ use App\ValueObjects\Package;
 final class BuildDelta
 {
     public function handle(
-        string            $package,
-        string            $fromVersion,
-        string            $fromDirectory,
-        Package           $fromMetadata,
-        string            $toVersion,
-        string            $toDirectory,
-        Package           $toMetadata,
+        string $package,
+        string $fromVersion,
+        string $fromDirectory,
+        Package $fromMetadata,
+        string $toVersion,
+        string $toDirectory,
+        Package $toMetadata,
         InstallSourceType $source,
     ): Delta {
         $before = Manifest::ofDirectory($fromDirectory);

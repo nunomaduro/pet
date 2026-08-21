@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Exceptions\FailureException;
-use App\ValueObjects\Package;
 use App\Support\Json;
+use App\ValueObjects\Package;
 
 final class FetchPackageMetadata
 {

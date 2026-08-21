@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
-use App\ValueObjects\Delta;
+use App\Actions\AuditProject;
+use App\Actions\RenderDelta;
 use App\Actions\ResolveDelta;
 use App\Enums\AuditStatus;
 use App\Exceptions\PortoException;
-use App\Actions\AuditProject;
-use App\ValueObjects\PackageAudit;
-use App\ValueObjects\Project;
 use App\Support\Bytes;
-use App\ValueObjects\ComposerOperation;
-use App\ValueObjects\ComposerPlan;
-use App\Actions\RenderDelta;
 use App\Support\Invitation;
 use App\Support\Json;
+use App\ValueObjects\ComposerOperation;
+use App\ValueObjects\ComposerPlan;
+use App\ValueObjects\Delta;
+use App\ValueObjects\PackageAudit;
+use App\ValueObjects\Project;
 
 final class AuditCommand extends Command
 {
@@ -45,6 +45,7 @@ final class AuditCommand extends Command
 
         try {
             $project = Project::locate($path ?? (string) getcwd());
+            $this->bucketOption();
         } catch (PortoException $portoException) {
             $this->components->error($portoException->getMessage());
 
@@ -130,6 +131,7 @@ final class AuditCommand extends Command
         ]);
 
         $renderer = new RenderDelta($this->output);
+        $bucket = $this->bucketOption();
 
         if ($this->option('json') === true) {
             $this->output->write(Json::encode([
@@ -216,7 +218,7 @@ final class AuditCommand extends Command
 
             if ($review['delta'] instanceof Delta) {
                 $this->newLine();
-                $renderer->buckets($review['delta']);
+                $renderer->buckets($review['delta'], $bucket?->value);
             }
         }
 
@@ -267,6 +269,7 @@ final class AuditCommand extends Command
 
         $requested = $this->option('from') !== null;
         $renderer = new RenderDelta($this->output);
+        $bucket = $this->bucketOption();
         $delta = null;
         $unresolved = null;
 
@@ -351,11 +354,8 @@ final class AuditCommand extends Command
             $this->relative($project->rootPath, $audit->path ?? ''),
         );
 
-        $bucket = $this->option('bucket');
-        assert($bucket === null || is_string($bucket));
-
         if ($delta instanceof Delta) {
-            $renderer->report($delta, $bucket);
+            $renderer->report($delta, $bucket?->value);
         } else {
             $this->newLine();
 

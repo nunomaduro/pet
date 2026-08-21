@@ -12,12 +12,12 @@ final readonly class ComposerOperation
     private const string LINE = '/^\s*-\s+(Installing|Upgrading|Downgrading|Removing)\s+([^\s\/]+\/[^\s\/]+)\s+\(([^)]+)\)/';
 
     public function __construct(
-        public string             $package,
+        public string $package,
         public ComposerChangeType $change,
-        public ?string            $from,
-        public ?string            $to,
-        public ?string            $distUrl = null,
-        public ?string            $distReference = null,
+        public ?string $from,
+        public ?string $to,
+        public ?string $distUrl = null,
+        public ?string $distReference = null,
     ) {}
 
     public static function parse(string $line): ?self

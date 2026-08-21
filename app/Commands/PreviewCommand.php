@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
-use App\ValueObjects\Delta;
+use App\Actions\PlanComposerUpdate;
+use App\Actions\RenderDelta;
 use App\Actions\ResolveDelta;
 use App\Exceptions\ComposerFailedException;
 use App\Exceptions\PortoException;
-use App\ValueObjects\TrustFile;
-use App\ValueObjects\InstalledRepository;
-use App\ValueObjects\Project;
-use App\ValueObjects\ComposerOperation;
-use App\ValueObjects\ComposerPlan;
-use App\Actions\PlanComposerUpdate;
-use App\Actions\RenderDelta;
 use App\Support\Invitation;
 use App\Support\Json;
+use App\ValueObjects\ComposerOperation;
+use App\ValueObjects\ComposerPlan;
+use App\ValueObjects\Delta;
+use App\ValueObjects\InstalledRepository;
 use App\ValueObjects\PlannedReview;
+use App\ValueObjects\Project;
+use App\ValueObjects\TrustFile;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 final class PreviewCommand extends Command
@@ -27,6 +27,7 @@ final class PreviewCommand extends Command
      */
     protected $signature = 'preview
         {--path= : The project directory to preview (defaults to the current one)}
+        {--bucket= : Limit the delta to one bucket: install-manifest, opaque, runtime-source, inert}
         {--no-cache : Re-download archives instead of reusing the cache}
         {--json : Emit machine-readable output}';
 
@@ -42,6 +43,7 @@ final class PreviewCommand extends Command
 
         try {
             $project = Project::locate($path ?? (string) getcwd());
+            $this->bucketOption();
             $plan = PlanComposerUpdate::default()->handle($project->rootPath);
             $reviews = $this->reviews($project, $plan);
         } catch (ComposerFailedException $composerFailedException) {
@@ -132,6 +134,7 @@ final class PreviewCommand extends Command
         }
 
         $renderer = new RenderDelta($this->output);
+        $bucket = $this->bucketOption();
 
         $this->line(sprintf('  <options=bold>to review</> <fg=gray>(%d, worst first)</>', count($reviews)));
         $this->newLine();
@@ -150,7 +153,7 @@ final class PreviewCommand extends Command
 
             if ($review->delta instanceof Delta) {
                 $this->newLine();
-                $renderer->buckets($review->delta);
+                $renderer->buckets($review->delta, $bucket?->value);
             }
         }
 

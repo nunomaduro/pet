@@ -13,11 +13,11 @@ use App\ValueObjects\ComposerPlan;
 use App\ValueObjects\Fingerprint;
 use App\ValueObjects\Grant;
 use App\ValueObjects\InstalledRepository;
-use App\ValueObjects\TrustFile;
 use App\ValueObjects\LockFile;
 use App\ValueObjects\Package;
 use App\ValueObjects\PackageAudit;
 use App\ValueObjects\Project;
+use App\ValueObjects\TrustFile;
 
 final readonly class AuditProject
 {
