@@ -1,7 +1,7 @@
 {
     "name": "nunomaduro/porto",
     "description": "A dependency audit trust file for PHP.",
-    "keywords": ["supply chain", "audit", "composer", "security", "console", "cli"],
+    "keywords": ["supply chain", "audit", "composer", "security", "console", "cli", "dev"],
     "type": "composer-plugin",
     "license": "MIT",
     "authors": [
@@ -52,11 +52,11 @@
         "post-update-cmd": "@test:dependencies",
         "lint": [
             "rector process",
-            "pint"
+            "pint --parallel"
         ],
         "test:lint": [
             "rector process --dry-run",
-            "pint --test"
+            "pint --test --parallel"
         ],
         "test:dependencies": "./porto audit",
         "test:types": "phpstan analyse",
